@@ -90,6 +90,15 @@ else
 	echo "======== SSL certificates already exist, skipping generation ========"
 fi
 
+# Copy nginx configuration to shared volume
+if [ -f "/var/www/html/config/default.conf" ]; then
+	echo "======== COPYING: nginx configuration ========"
+	mkdir -p /var/nginx-config
+	cp /var/www/html/config/default.conf /var/nginx-config/
+	chmod 644 /var/nginx-config/default.conf
+	echo "======== SUCCESS: nginx configuration copied ========"
+fi
+
 chown www-data:www-data .
 
 ### START .HTCONFIG.PHP ###

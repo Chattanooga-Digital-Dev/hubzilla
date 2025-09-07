@@ -38,7 +38,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - nginx_config:/etc/nginx:ro
+      - nginx_config:/etc/nginx/conf.d:ro
       - ssl_certs:/etc/nginx/ssl:ro
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
     networks:
@@ -57,6 +57,7 @@ services:
     volumes:
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
       - ssl_certs:/var/ssl-shared
+      - nginx_config:/var/nginx-config
 
   hub_cron:
     container_name: hubzilla_cronjob        # ARBITARY (user can/should change)
