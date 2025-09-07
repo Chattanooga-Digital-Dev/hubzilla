@@ -7,21 +7,21 @@ echo "=========================================="
 
 # Test 1: Check if containers are running
 echo "🔍 Testing container status..."
-if docker-compose ps | grep -q "Up.*hubzilla_itself"; then
+if docker-compose ps | grep "hubzilla_itself" | grep -q "Up"; then
     echo "✅ Hubzilla container is running"
 else
     echo "❌ Hubzilla container is not running"
     exit 1
 fi
 
-if docker-compose ps | grep -q "Up.*hubzilla_database"; then
+if docker-compose ps | grep "hubzilla_database" | grep -q "Up"; then
     echo "✅ Database container is running"
 else
     echo "❌ Database container is not running"
     exit 1
 fi
 
-if docker-compose ps | grep -q "Up.*hubzilla_webserver"; then
+if docker-compose ps | grep "hubzilla_webserver" | grep -q "Up"; then
     echo "✅ Nginx container is running"
 else
     echo "❌ Nginx container is not running"
