@@ -28,8 +28,10 @@ services:
     image: nginx:1.25.3-alpine
     restart: unless-stopped
     depends_on:
-      - hub
-      - hub_cron
+      hub:
+        condition: service_healthy
+      hub_cron:
+        condition: service_started
     env_file:
       - .env
     ports:
@@ -57,6 +59,12 @@ services:
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
       - ssl_certs:/var/ssl-shared
       - nginx_config:/var/nginx-config
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /var/nginx-config/default.conf || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   hub_cron:
     container_name: hubzilla_cronjob        # ARBITARY (user can/should change)
