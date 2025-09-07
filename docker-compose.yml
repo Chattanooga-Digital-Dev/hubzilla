@@ -73,6 +73,8 @@ services:
     restart: unless-stopped
     depends_on:
       - hub_db
+    env_file:
+      - .env
     networks:
       - hubzilla
     command: ["crond", "-f"]
