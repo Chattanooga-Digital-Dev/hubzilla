@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Set up HTTP forwarding for localhost to nginx container for URL rewrite testing
+# This allows Hubzilla's setup wizard to test URL rewriting via localhost
+# Use socat for proper HTTP proxying instead of netcat to avoid header issues
+
+# Install socat if not available
+which socat >/dev/null || apk add --no-cache socat
+
+# HTTPS forwarding with proper HTTP handling
+sh -c 'while true; do socat TCP4-LISTEN:443,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:443; done' &
+
+# HTTP forwarding with proper HTTP handling  
+sh -c 'while true; do socat TCP4-LISTEN:80,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:80; done' &
+
 ### CHECK FOR, AND SET THE DATABASE ###
 CNT=0
 case "${DB_TYPE}" in
@@ -88,6 +101,22 @@ if [ ! -f "/var/ssl-shared/localhost.pem" ] || [ ! -f "/var/ssl-shared/localhost
 	echo "======== SUCCESS: SSL certificates generated ========"
 else
 	echo "======== SSL certificates already exist, skipping generation ========"
+	# Ensure mkcert CA is installed for existing certificates
+	mkcert -install >/dev/null 2>&1 || true
+fi
+
+# Install mkcert root CA in system trust store for Hubzilla SSL validation
+echo "======== INSTALLING: mkcert CA in system trust store ========"
+if [ -f "/root/.local/share/mkcert/rootCA.pem" ]; then
+	# Ensure ca-certificates package is available
+	which update-ca-certificates >/dev/null || apk add --no-cache ca-certificates
+	# Copy mkcert CA to system CA directory
+	cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
+	# Update system CA certificates
+	update-ca-certificates >/dev/null 2>&1
+	echo "======== SUCCESS: mkcert CA installed in system trust store ========"
+else
+	echo "======== WARNING: mkcert CA not found, SSL validation may fail ========"
 fi
 
 # Copy nginx configuration to shared volume

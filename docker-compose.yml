@@ -1,5 +1,10 @@
 networks:
   hubzilla:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
 services:
   hub_db:
@@ -19,7 +24,8 @@ services:
     #  timeout: 5s
     #  retries: 5
     networks:
-      - hubzilla
+      hubzilla:
+        ipv4_address: 172.20.0.30
     volumes:
         - db_data:/var/lib/postgresql/data
 
@@ -47,7 +53,8 @@ services:
              nginx -s reload && 
              wait"
     networks:
-      - hubzilla
+      hubzilla:
+        ipv4_address: 172.20.0.10
 
   hub:
     container_name: hubzilla_itself         # ARBITARY (user can/should change)
@@ -59,7 +66,8 @@ services:
     env_file:
       - .env
     networks:
-      - hubzilla
+      hubzilla:
+        ipv4_address: 172.20.0.20
     volumes:
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
       - ssl_certs:/var/ssl-shared
@@ -81,7 +89,8 @@ services:
     env_file:
       - .env
     networks:
-      - hubzilla
+      hubzilla:
+        ipv4_address: 172.20.0.40
     command: ["crond", "-f"]
 
 volumes:
