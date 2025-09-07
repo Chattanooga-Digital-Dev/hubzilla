@@ -256,5 +256,14 @@ fi
 chown -R www-data:www-data /var/www/html/*
 chown -R www-data:www-data /var/www/html/.*
 
+# Check if this is initial setup (no user accounts created yet)
+ACCOUNT_COUNT=$(sql 'SELECT count(*) FROM account;' 2>/dev/null | tail -1 | tr -d ' ')
+if [ "${ACCOUNT_COUNT:-0}" = "0" ]; then
+	echo "======== INITIAL SETUP: Removing .htconfig.php to show setup wizard ========"
+	rm -f /var/www/html/.htconfig.php
+else
+	echo "======== EXISTING INSTALLATION: Keeping .htconfig.php ========"
+fi
+
 echo "Starting $@"
 exec "$@"
