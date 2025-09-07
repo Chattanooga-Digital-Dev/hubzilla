@@ -76,6 +76,20 @@ for folder in "${folders=addon extend log store view widget}"; do
     fi
 done
 
+# Generate SSL certificates if they don't exist
+if [ ! -f "/var/ssl-shared/localhost.pem" ] || [ ! -f "/var/ssl-shared/localhost-key.pem" ]; then
+	echo "======== GENERATING: SSL certificates ========"
+	mkdir -p /var/ssl-shared
+	# Create local CA and generate certificates
+	mkcert -install
+	mkcert -key-file /var/ssl-shared/localhost-key.pem -cert-file /var/ssl-shared/localhost.pem localhost 127.0.0.1 ::1
+	# Set proper permissions
+	chmod 644 /var/ssl-shared/*.pem
+	echo "======== SUCCESS: SSL certificates generated ========"
+else
+	echo "======== SSL certificates already exist, skipping generation ========"
+fi
+
 chown www-data:www-data .
 
 ### START .HTCONFIG.PHP ###

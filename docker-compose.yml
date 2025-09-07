@@ -56,6 +56,7 @@ services:
       - hubzilla
     volumes:
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
+      - ssl_certs:/var/ssl-shared
 
   hub_cron:
     container_name: hubzilla_cronjob        # ARBITARY (user can/should change)
