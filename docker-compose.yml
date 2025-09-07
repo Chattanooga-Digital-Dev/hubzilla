@@ -44,7 +44,8 @@ services:
 
   hub:
     container_name: hubzilla_itself         # ARBITARY (user can/should change)
-    image: "dhitchenor/hubzilla:${VER_FULL}"
+    build: .
+    # image: "dhitchenor/hubzilla:${VER_FULL}"
     restart: unless-stopped
     depends_on:
       - hub_db
@@ -59,7 +60,8 @@ services:
 
   hub_cron:
     container_name: hubzilla_cronjob        # ARBITARY (user can/should change)
-    image: "dhitchenor/hubzilla:${VER_FULL}"
+    build: .
+    # image: "dhitchenor/hubzilla:${VER_FULL}"
     restart: unless-stopped
     depends_on:
       - hub_db

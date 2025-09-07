@@ -38,12 +38,15 @@ RUN chmod +x /hubzilla/entrypoint.sh \
  && mkdir -p "store/[data]/smarty3" \
  && mkdir -p "view/theme" \
  && mkdir -p "widget" \
+ && mkdir -p "config" \
  && util/add_widget_repo https://framagit.org/hubzilla/widgets.git hubzilla-widgets \
  && util/add_addon_repo https://framagit.org/hubzilla/addons.git hzaddons \
  && util/add_addon_repo https://framagit.org/dentm42/dm42-hz-addons.git dm42 \
  && util/update_widget_repo hubzilla-widgets \
  && util/update_addon_repo hzaddons \
  && util/update_addon_repo dm42
+
+COPY config/default.conf /hubzilla/config/
 
 FROM php:8.2.22-fpm-alpine3.20
 
@@ -75,8 +78,9 @@ RUN apk --update --no-cache --no-progress add \
   tzdata \
   wget \
   zlib \
- && wget -O /usr/local/bin/mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64 \
- && chmod +x /usr/local/bin/mkcert \
+ && echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+ && apk --update --no-cache add mkcert \
+ && mkcert --version \
  && apk --update --no-progress add --virtual .build-deps \
   autoconf \
   build-base \
