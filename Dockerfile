@@ -49,6 +49,7 @@ FROM php:8.2.22-fpm-alpine3.20
 
 RUN apk --update --no-cache --no-progress add \
   bash \
+  curl \
   git \
   icu-libs \
   imagemagick \
@@ -72,7 +73,10 @@ RUN apk --update --no-cache --no-progress add \
   ssmtp \
   shadow \
   tzdata \
+  wget \
   zlib \
+ && wget -O /usr/local/bin/mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64 \
+ && chmod +x /usr/local/bin/mkcert \
  && apk --update --no-progress add --virtual .build-deps \
   autoconf \
   build-base \
