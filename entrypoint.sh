@@ -91,12 +91,14 @@ else
 fi
 
 # Copy nginx configuration to shared volume
-if [ -f "/var/www/html/config/default.conf" ]; then
+if [ -f "/etc/hubzilla/default.conf" ]; then
 	echo "======== COPYING: nginx configuration ========"
 	mkdir -p /var/nginx-config
-	cp /var/www/html/config/default.conf /var/nginx-config/
+	cp /etc/hubzilla/default.conf /var/nginx-config/
 	chmod 644 /var/nginx-config/default.conf
 	echo "======== SUCCESS: nginx configuration copied ========"
+else
+	echo "======== WARNING: nginx config not found at /etc/hubzilla/default.conf ========"
 fi
 
 chown www-data:www-data .

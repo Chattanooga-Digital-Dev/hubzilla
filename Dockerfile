@@ -141,7 +141,15 @@ RUN apk --update --no-cache --no-progress add \
 
 COPY --from=build /hubzilla /var/www/html
 
-ENTRYPOINT [ "/var/www/html/entrypoint.sh" ]
+# Copy updated entrypoint.sh outside volume-mounted directory
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Copy config file outside volume-mounted directory
+RUN mkdir -p /etc/hubzilla
+COPY config/default.conf /etc/hubzilla/default.conf
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
 CMD ["php-fpm"]
 
