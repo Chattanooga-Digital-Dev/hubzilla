@@ -41,8 +41,11 @@ services:
       - nginx_config:/etc/nginx/conf.d:ro
       - ssl_certs:/etc/nginx/ssl:ro
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
-      - ./config/nginx-startup.sh:/nginx-startup.sh:ro
-    command: ["/bin/sh", "/nginx-startup.sh"]
+    command: >
+      sh -c "nginx -g 'daemon off;' & 
+             sleep 20 && 
+             nginx -s reload && 
+             wait"
     networks:
       - hubzilla
 
