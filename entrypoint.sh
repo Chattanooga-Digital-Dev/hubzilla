@@ -14,6 +14,14 @@ sh -c 'while true; do socat TCP4-LISTEN:443,bind=127.0.0.1,reuseaddr,fork TCP4:h
 sh -c 'while true; do socat TCP4-LISTEN:80,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:80; done' &
 
 ### CHECK FOR, AND SET THE DATABASE ###
+# Skip database initialization if this is the cron container
+if [ "$1" = "crond" ]; then
+    echo "======== CRON CONTAINER: Skipping database initialization ========" 
+    cd /var/www/html
+    exec "$@"
+    exit 0
+fi
+
 CNT=0
 case "${DB_TYPE}" in
 	# WARNING # mysql is still largely untested..
@@ -26,12 +34,11 @@ case "${DB_TYPE}" in
 			sleep 2
 		done
 		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
-			echo "======== INSTALLING: database schema ========"
-			db < install/schema_mysql.sql
-			if [ $? -ne 0 ]; then
-				echo "======== ERROR: Installing schema generated errors ========"
-				echo "======== RESULT: Continuing.. See repo if further errors occur ========"
-			fi
+			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
+			# Don't install schema here - let setup wizard handle it
+			FORCE_CONFIG=0
+		else
+			echo "======== DATABASE: schema already exists ========"
 			FORCE_CONFIG=1
 		fi
 		DB_TYPE=0
@@ -44,12 +51,11 @@ case "${DB_TYPE}" in
 			sleep 2
 		done
 		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
-			echo "======== INSTALLING: database schema ========"
-			db < install/schema_postgres.sql
-			if [ $? -ne 0 ]; then
-				echo "======== ERROR: Installing schema generated errors ========"
-				echo "======== RESULT: Continuing.. See repo if further errors occur ========"
-			fi
+			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
+			# Don't install schema here - let setup wizard handle it
+			FORCE_CONFIG=0
+		else
+			echo "======== DATABASE: schema already exists ========"
 			FORCE_CONFIG=1
 		fi
 		DB_TYPE=1
