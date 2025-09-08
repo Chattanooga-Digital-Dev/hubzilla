@@ -4,13 +4,13 @@ A fully containerized Hubzilla setup for local development with HTTPS support an
 
 ## Features
 
-- **HTTPS with valid certificates** - Uses mkcert for browser-trusted localhost certificates
+- **HTTPS with certificates** - Uses mkcert for browser-trusted localhost certificates
 - **PostgreSQL database** - Persistent data storage with health checks
 - **All Docker volumes** - No bind mounts, fully portable setup
-- **No email verification** - Simplified local development workflow
+- **Email verification workaround** - Simplified local development workflow
 - **localhost domain** - Works on any machine without DNS configuration
 - **URL rewrite testing** - Internal HTTP forwarding for setup wizard validation
-- **Automated setup** - SSL generation, database initialization, and configuration
+- **Automated setup** - SSL generation and configuration
 
 ## Disclaimer
 
