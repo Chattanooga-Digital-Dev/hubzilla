@@ -14,7 +14,7 @@ A fully containerized Hubzilla setup for local development with HTTPS support an
 
 ## Disclaimer
 
-This guide was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development, may contain bugs, and is intended for local development and testing only. **Not for production use.**
+This project was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development, may contain bugs, and is intended for local development and testing only. **Not for production use.**
 
 ## Prerequisites
 
