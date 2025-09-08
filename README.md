@@ -357,7 +357,11 @@ For production deployment:
 
 ## License
 
-[MIT License]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Attribution
+
+This project is based on [dhitchenor/hubzilla](https://github.com/dhitchenor/hubzilla), also licensed under the MIT License.
 
 ## Support
 
