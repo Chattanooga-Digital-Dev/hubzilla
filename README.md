@@ -28,6 +28,7 @@ This guide was developed with AI assistance and is provided "as-is" without warr
 ```bash
 git clone <your-repo-url>
 cd hubzilla
+cp .env.example .env
 ```
 
 ### 2. Build and Start Containers
