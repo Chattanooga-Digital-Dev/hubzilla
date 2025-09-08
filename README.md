@@ -26,7 +26,7 @@ This guide was developed with AI assistance and is provided "as-is" without warr
 ### 1. Clone and Configure
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Chattanooga-Digital-Dev/hubzilla.git
 cd hubzilla
 cp .env.example .env
 ```
