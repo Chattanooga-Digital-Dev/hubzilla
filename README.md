@@ -12,6 +12,10 @@ A fully containerized Hubzilla setup for local development with HTTPS support an
 - **URL rewrite testing** - Internal HTTP forwarding for setup wizard validation
 - **Automated setup** - SSL generation, database initialization, and configuration
 
+## Disclaimer
+
+This guide was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development, may contain bugs, and is intended for local development and testing only. **Not for production use.**
+
 ## Prerequisites
 
 - Docker & Docker Compose
