@@ -57,6 +57,7 @@ docker logs -f hubzilla_itself
    Database Login Name: hubzilla
    Database Login Password: P@55w0rD
    Database Name: hub
+   Database Type: PostgreSQL
    ```
 
 3. **Create Administrator Account (Step 3):**
@@ -247,9 +248,6 @@ POSTGRES_DB=hub
 ## Troubleshooting
 
 ### Common Issues
-
-**Problem:** "Database install failed" during setup wizard
-**Solution:** This was a known issue that has been fixed. Ensure you're using the latest version of the project.
 
 **Problem:** Containers fail to start
 **Solution:**
