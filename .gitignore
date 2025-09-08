@@ -1,4 +1,91 @@
-block.github
-troubleshooting
-
+# Environment and secrets
 .env
+.env.local
+.env.*.local
+*.env
+
+# Docker-related files
+docker-compose.override.yml
+.docker/
+docker-compose.prod.yml
+
+# Hubzilla-specific files
+/store/
+/log/
+/logs/
+*.log
+/addon/
+/extend/
+/cache/
+/smarty3/
+.htconfig.php
+.htaccess.dist
+
+# SSL certificates and keys (local development)
+*.pem
+*.key
+*.crt
+*.csr
+ssl/
+certs/
+
+# Database files (if using local files)
+*.sql
+*.sqlite
+*.db
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Node.js (if using for build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PHP-specific
+vendor/
+composer.lock
+*.cache
+.phpunit.result.cache
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+temp/
+
+# Archive files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Documentation build artifacts
+docs/_build/
+site/
+
+# Personal project-specific troubleshooting documents
+troubleshooting
