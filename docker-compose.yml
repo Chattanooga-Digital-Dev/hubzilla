@@ -72,6 +72,7 @@ services:
       - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
       - ssl_certs:/var/ssl-shared
       - nginx_config:/var/nginx-config
+      - /mnt/c/Users/mattb/AppData/Local/mkcert:/root/.local/share/mkcert:ro
     healthcheck:
       test: ["CMD-SHELL", "test -f /var/nginx-config/default.conf || exit 1"]
       interval: 5s
