@@ -69,10 +69,19 @@ For trusted HTTPS certificates in your browser, install mkcert on your host syst
    
    **Option B: Direct download from GitHub:**
    ```bash
-   # Download latest release
+   # For Intel Macs (x86_64)
    curl -JLO "https://dl.filippo.io/mkcert/latest?for=darwin/amd64"
    chmod +x mkcert-v*-darwin-amd64
    sudo mv mkcert-v*-darwin-amd64 /usr/local/bin/mkcert
+   
+   # For M-series Macs (Apple Silicon)
+   curl -JLO "https://dl.filippo.io/mkcert/latest?for=darwin/arm64"
+   chmod +x mkcert-v*-darwin-arm64
+   sudo mv mkcert-v*-darwin-arm64 /usr/local/bin/mkcert
+   
+   # Check your Mac's architecture if unsure:
+   # uname -m
+   # x86_64 = Intel Mac, arm64 = M-series Mac
    ```
 
 3. **Install the local CA:**
