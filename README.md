@@ -1,6 +1,6 @@
 # Hubzilla Local Development with Docker
 
-A fully containerized Hubzilla setup for local development with HTTPS support and automated SSL certificate generation.
+A fully containerized Hubzilla setup for local development with HTTPS support.
 
 ## Features
 
