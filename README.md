@@ -23,11 +23,22 @@ This project was developed with AI assistance and is provided "as-is" without wa
 
 ## SSL Setup
 
-Install mkcert to avoid browser SSL warnings:
+Install mkcert to get trusted SSL certificates without browser warnings:
 
-**Windows:** Download from [mkcert releases](https://github.com/FiloSottile/mkcert/releases), run `mkcert -install`
-**macOS:** `brew install mkcert && mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)
-**Linux:** Install from package manager, run `mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)
+- **Windows:** Download from [mkcert releases](https://github.com/FiloSottile/mkcert/releases), run `mkcert -install`  
+  *(Installs rootCA in Windows Trusted Root Certification Authorities)*
+
+- **macOS:** `brew install mkcert && mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)  
+  *(Installs rootCA in macOS System Keychain)*
+
+- **Linux:** Install from package manager, run `mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)  
+  *(Installs rootCA in system trust store + Firefox NSS database)*
+
+**What `mkcert -install` does:**
+- Creates a local Certificate Authority (CA) on your system
+- Installs the rootCA certificate into your system's trust store
+- Enables browsers to trust certificates signed by this CA
+- One-time setup - only needs to be run once per system
 
 ## Quick Start for Developers
 
