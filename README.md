@@ -10,7 +10,6 @@ A fully containerized Hubzilla setup for local development with HTTPS support an
 - **Email verification workaround** - Simplified local development workflow
 - **localhost domain** - Works on any machine without DNS configuration
 - **URL rewrite testing** - Internal HTTP forwarding for setup wizard validation
-- **Automated setup** - SSL generation and configuration
 
 ## Disclaimer
 
@@ -20,15 +19,15 @@ This project was developed with AI assistance and is provided "as-is" without wa
 
 - Docker & Docker Compose
 - Git
-- mkcert for trusted SSL certificates
+- mkcert (for TLS/SSL certificates)
 
 ## SSL Setup
 
 Install mkcert to avoid browser SSL warnings:
 
 **Windows:** Download from [mkcert releases](https://github.com/FiloSottile/mkcert/releases), run `mkcert -install`
-**macOS:** `brew install mkcert && mkcert -install` (requires home mount in docker-compose)
-**Linux:** Install from package manager, run `mkcert -install` (requires home mount in docker-compose)
+**macOS:** `brew install mkcert && mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)
+**Linux:** Install from package manager, run `mkcert -install` (add `- $HOME:/host-home:ro` to docker-compose volumes)
 
 ## Quick Start for Developers
 
@@ -98,6 +97,13 @@ Your Hubzilla instance is now ready at: **https://localhost**
 | `hubzilla_database` | PostgreSQL database | 172.20.0.30 | 5432 |
 | `hubzilla_cronjob` | Background tasks | 172.20.0.40 | - |
 
+### Docker Compose Services
+
+- `hub_db` (PostgreSQL) - Database service with health checks
+- `hub` (Hubzilla) - Main application with PHP-FPM
+- `hub_web` (Nginx) - Reverse proxy with SSL termination
+- `hub_cron` (Cron) - Background task processing
+
 ## Docker Volumes
 
 All data is stored in Docker volumes for portability:
@@ -165,10 +171,7 @@ docker exec hubzilla_itself openssl x509 -in /var/ssl-shared/localhost.pem -text
 
 # Test SSL connection
 docker exec hubzilla_itself openssl s_client -connect hubzilla_webserver:443 -verify_return_error </dev/null
-
-# Regenerate certificates (if needed)
-docker exec hubzilla_itself mkcert -key-file /var/ssl-shared/localhost-key.pem -cert-file /var/ssl-shared/localhost.pem localhost 127.0.0.1 ::1
-```
+``
 
 ## Complete Cleanup Instructions
 
@@ -220,40 +223,6 @@ docker image rm $(docker image ls -aq)
 docker network prune -f
 ```
 
-## Configuration Files
-
-### Environment Variables (.env)
-
-Key settings for local development:
-
-```bash
-# Site Configuration
-DOMAIN=localhost
-SITE_NAME=My Cool Site
-ADMIN_EMAIL=example@gmail.com
-REQUIRE_EMAIL=0           # Disables email verification
-
-# Database Configuration
-DB_TYPE=postgres
-DB_HOST=hub_db
-DB_NAME=hub
-DB_USER=hubzilla
-DB_PASSWORD=P@55w0rD
-DB_PORT=5432
-
-# PostgreSQL Container Variables
-POSTGRES_PASSWORD=P@55w0rD
-POSTGRES_USER=hubzilla
-POSTGRES_DB=hub
-```
-
-### Docker Compose Services
-
-- `hub_db` (PostgreSQL) - Database service with health checks
-- `hub` (Hubzilla) - Main application with PHP-FPM
-- `hub_web` (Nginx) - Reverse proxy with SSL termination
-- `hub_cron` (Cron) - Background task processing
-
 ## Troubleshooting
 
 ### Common Issues
@@ -267,12 +236,6 @@ docker compose ps
 # View detailed logs
 docker compose logs
 
-# Restart with fresh build
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-```
-
 **Problem:** "Connection refused" errors
 **Solution:**
 ```bash
@@ -282,17 +245,6 @@ docker logs hubzilla_database
 # Check network connectivity
 docker exec hubzilla_itself ping hub_db
 ```
-
-**Problem:** SSL certificate errors in browser
-**Solution:**
-```bash
-# Simply accept the certificate in your browser
-# Click "Advanced" -> "Accept Risk and Continue" when visiting https://localhost
-# This is normal for local development with self-signed certificates
-```
-
-**Problem:** URL rewrite test fails in setup wizard
-**Solution:** This has been resolved with socat-based HTTP forwarding. Ensure containers are fully started.
 
 ### Health Checks
 
@@ -309,27 +261,6 @@ curl -k -I https://localhost
 # Test internal HTTP forwarding
 docker exec hubzilla_itself curl -k -s https://localhost/setup/testrewrite
 ```
-
-## Development Workflow
-
-### Making Changes
-
-1. **Code Changes:** Edit files and rebuild containers
-   ```bash
-   docker compose build --no-cache
-   docker compose up -d --force-recreate
-   ```
-
-2. **Database Changes:** Access PostgreSQL directly
-   ```bash
-   docker exec -it hubzilla_database psql -U hubzilla -d hub
-   ```
-
-3. **Configuration Changes:** Edit `.env` and restart
-   ```bash
-   docker compose down
-   docker compose up -d
-   ```
 
 ### Git Workflow
 
@@ -352,7 +283,6 @@ For production deployment:
 - Configure proper domain names instead of localhost
 - Enable email verification (`REQUIRE_EMAIL=1`)
 - Review all security settings in `.env`
-- Use external PostgreSQL database for scalability
 - Configure proper backup procedures
 - Set up monitoring and logging
 - Review and harden container security
