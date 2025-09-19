@@ -1,69 +1,55 @@
-# Stalwart Mail Server Configuration for Local Development
+# Minimal Stalwart Mail Server Configuration for Local Development
+# Based on official documentation minimal configuration example
 
-[server]
-hostname = "mail.localhost"
+[server.listener."smtp"]
+bind = ["[::]:25"]
+protocol = "smtp"
 
-[smtp]
-bind = ["0.0.0.0:25", "0.0.0.0:587"]
-greeting = "Stalwart SMTP at your service"
+[server.listener."submissions"]
+bind = ["[::]:465"]
+protocol = "smtp"
+tls.implicit = true
 
-[smtp.session]
-max-connections = 100
-timeout = "5m"
+[server.listener."submission"]
+bind = ["[::]:587"]
+protocol = "smtp"
 
-[imap]
-bind = ["0.0.0.0:143", "0.0.0.0:993"]
+[server.listener."imap"]
+bind = ["[::]:143"]
+protocol = "imap"
 
-[store]
-type = "sqlite"
-path = "/opt/stalwart/data/stalwart.db"
+[server.listener."imaptls"]
+bind = ["[::]:993"]
+protocol = "imap"
+tls.implicit = true
 
-# Local development users
-[store.query]
-name = "sql"
-type = "sql"
+# Storage configuration (required)
+[storage]
+data = "rocksdb"
+fts = "rocksdb"
+blob = "rocksdb"
+lookup = "rocksdb"
+directory = "internal"
 
-# Simple local authentication
-[directory."local"]
-type = "memory"
+[store."rocksdb"]
+type = "rocksdb"
+path = "/opt/stalwart/data"
+compression = "lz4"
 
-# Test accounts for email development
-[[directory."local".principals]]
-name = "admin"
-description = "Administrator"
+# Internal directory for local users
+[directory."internal"]
+type = "internal"
+store = "rocksdb"
+
+# Add local test accounts through admin interface or API
+# For now, we'll use fallback admin to configure accounts
+[authentication.fallback-admin]
+user = "admin"
 secret = "admin123"
-email = ["admin@localhost"]
-member-of = ["admin"]
 
-[[directory."local".principals]]
-name = "education"
-description = "Education Events"
-secret = "education123" 
-email = ["education@localhost"]
-
-[[directory."local".principals]]
-name = "music"
-description = "Music Events" 
-secret = "music123"
-email = ["music@localhost"]
-
-[[directory."local".principals]]
-name = "tech"
-description = "Tech Events"
-secret = "tech123" 
-email = ["tech@localhost"]
-
-[[directory."local".principals]]
-name = "volunteer"
-description = "Volunteer Events"
-secret = "volunteer123"
-email = ["volunteer@localhost"]
-
-# Default group
-[[directory."local".principals]]
-name = "admin"
-description = "Administrators" 
-type = "group"
-
-[authentication]
-directory = "local"
+# Logging
+[tracer."stdout"]
+type = "stdout"
+level = "info"
+ansi = false
+enable = true
