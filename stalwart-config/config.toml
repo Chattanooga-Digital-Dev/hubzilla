@@ -1,0 +1,69 @@
+# Stalwart Mail Server Configuration for Local Development
+
+[server]
+hostname = "mail.localhost"
+
+[smtp]
+bind = ["0.0.0.0:25", "0.0.0.0:587"]
+greeting = "Stalwart SMTP at your service"
+
+[smtp.session]
+max-connections = 100
+timeout = "5m"
+
+[imap]
+bind = ["0.0.0.0:143", "0.0.0.0:993"]
+
+[store]
+type = "sqlite"
+path = "/opt/stalwart/data/stalwart.db"
+
+# Local development users
+[store.query]
+name = "sql"
+type = "sql"
+
+# Simple local authentication
+[directory."local"]
+type = "memory"
+
+# Test accounts for email development
+[[directory."local".principals]]
+name = "admin"
+description = "Administrator"
+secret = "admin123"
+email = ["admin@localhost"]
+member-of = ["admin"]
+
+[[directory."local".principals]]
+name = "education"
+description = "Education Events"
+secret = "education123" 
+email = ["education@localhost"]
+
+[[directory."local".principals]]
+name = "music"
+description = "Music Events" 
+secret = "music123"
+email = ["music@localhost"]
+
+[[directory."local".principals]]
+name = "tech"
+description = "Tech Events"
+secret = "tech123" 
+email = ["tech@localhost"]
+
+[[directory."local".principals]]
+name = "volunteer"
+description = "Volunteer Events"
+secret = "volunteer123"
+email = ["volunteer@localhost"]
+
+# Default group
+[[directory."local".principals]]
+name = "admin"
+description = "Administrators" 
+type = "group"
+
+[authentication]
+directory = "local"
