@@ -104,6 +104,7 @@ services:
       - "993:993"   # IMAPS
       - "465:465"   # SMTP over SSL
       - "587:587"   # SMTP submission
+      - "8080:8080" # Web admin
     volumes:
       - stalwart_data:/opt/stalwart
       - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro

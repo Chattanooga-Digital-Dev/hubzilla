@@ -23,6 +23,10 @@ bind = ["[::]:993"]
 protocol = "imap"
 tls.implicit = true
 
+[server.listener."management"]
+bind = ["[::]:8080"]
+protocol = "http"
+
 # Storage configuration (required)
 [storage]
 data = "rocksdb"
