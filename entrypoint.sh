@@ -88,6 +88,7 @@ UseSTARTTLS=${SMTP_USE_STARTTLS}
 root=${SMTP_USER}
 rewriteDomain=${SMTP_DOMAIN}
 FromLineOverride=YES
+hostname=${SMTP_DOMAIN}
 SMTPCONF
 if [ "${SMTP_PASS:-'nil'}" != "nil" ]; then
 	cat <<SMTPCONF >> /etc/ssmtp/ssmtp.conf
