@@ -67,12 +67,25 @@ case "${DB_TYPE}" in
 	;;
 esac
 
+# Define global database functions for later use
+case "${DB_TYPE}" in
+	0|[Mm][Yy][Ss][Qq][Ll]|[Mm][Yy][Ss][Qq][Ll][Ii]|[Mm][Aa][Rr][Ii][Aa][Dd][Bb]) # MySQL
+		sql() { mysql -u "${DB_USER}" -p"${DB_PASSWORD}" -h "${DB_HOST}" -P "${DB_PORT}" -D "${DB_NAME}" -e "$@" 2>/dev/null | tail -1; }
+	;;
+	1|[Pp][Ss][Qq][Ll]|[Pp][Gg][Ss][Qq][Ll]|[Pp][Oo][Ss][Tt][Gg][Rr][Ee][Ss]|postgres) # PostgreSQL  
+		sql() { PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -wt -c "$@" 2>/dev/null; }
+	;;
+	*)
+		sql() { echo "0"; }  # Default to 0 for unknown DB types
+	;;
+esac
+
 cd /var/www/html
 
 cat <<SMTPCONF > /etc/ssmtp/ssmtp.conf
 mailhub=${SMTP_HOST}:${SMTP_PORT}
 UseSTARTTLS=${SMTP_USE_STARTTLS}
-root=${SMTP_USER}@${SMTP_DOMAIN}
+root=${SMTP_USER}
 rewriteDomain=${SMTP_DOMAIN}
 FromLineOverride=YES
 SMTPCONF
@@ -198,8 +211,11 @@ fi
 chown www-data:www-data .
 
 ### START .HTCONFIG.PHP ###
-# If database is detected, .htconfig.php will be created
-# otherwise, the user will need to produce their own
+# Disable automatic .htconfig.php regeneration to preserve existing installations
+# This was causing registration and configuration issues on container restart
+echo "======== SKIPPING: .htconfig.php auto-generation (preserves existing setup) ========"
+FORCE_CONFIG=0
+
 if [ ${FORCE_CONFIG:-0} != 0 ]; then
 	[ -f .htconfig.php ] && rm '.htconfig.php'
 	random_string() {	tr -dc '0-9a-f' </dev/urandom | head -c ${1:-64} ; }
@@ -293,9 +309,6 @@ case "${DEBUG_PHP}" in
 	;;
 esac
 
-chown www-data:www-data .htconfig.php
-### END .HTCONFIG.PHP ###
-
 	if [ ${REDIS_PATH:-"nil"} != "nil" ]; then
 		util/config system session_save_handler redis
 		util/config system session_save_path ${REDIS_PATH}
@@ -326,7 +339,10 @@ chown www-data:www-data .htconfig.php
 	util/config system ignore_imagick true
 	util/config system register_policy ${REGISTER_POLICY}
 	#util/config system disable_email_validation 1
+
+chown www-data:www-data .htconfig.php
 fi
+### END .HTCONFIG.PHP ###
 
 # Extra configurations needed if Hubzilla version is 4 or below
 CURVER=$(printf "%d" "${HZ_VERSION}")
@@ -350,13 +366,11 @@ fi
 chown -R www-data:www-data /var/www/html/*
 chown -R www-data:www-data /var/www/html/.*
 
-# Check if this is initial setup (no user accounts created yet)
-ACCOUNT_COUNT=$(sql 'SELECT count(*) FROM account;' 2>/dev/null | tail -1 | tr -d ' ')
-if [ "${ACCOUNT_COUNT:-0}" = "0" ]; then
-	echo "======== INITIAL SETUP: Removing .htconfig.php to show setup wizard ========"
-	rm -f /var/www/html/.htconfig.php
+# Simple installation check - preserve .htconfig.php if it exists
+if [ -f /var/www/html/.htconfig.php ]; then
+	echo "======== EXISTING INSTALLATION: .htconfig.php found, preserving it ========"
 else
-	echo "======== EXISTING INSTALLATION: Keeping .htconfig.php ========"
+	echo "======== INITIAL SETUP: No .htconfig.php found, setup wizard will show ========"
 fi
 
 echo "Starting $@"
