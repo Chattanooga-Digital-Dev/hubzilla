@@ -233,7 +233,6 @@ if [ ${FORCE_CONFIG:-0} != 0 ]; then
 // They can also be set by 'util/pconfig'
 App::\$config['system']['timezone'] = '${TIMEZONE}';
 App::\$config['system']['baseurl'] = 'https://${DOMAIN}';
-App::\$config['system']['sitename'] = '${SITE_NAME}';
 App::\$config['system']['location_hash'] = '$(random_string)';
 App::\$config['system']['transport_security_header'] = 1;
 App::\$config['system']['content_security_policy'] = 1;
