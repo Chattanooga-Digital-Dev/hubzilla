@@ -1,10 +1,6 @@
 # Environment and secrets
 .env
-.env.local
-.env.*.local
 *.env
-.env.copy
-.env.copy.old
 
 # Docker-related files
 docker-compose.override.yml
