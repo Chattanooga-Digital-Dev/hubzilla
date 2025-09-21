@@ -110,6 +110,7 @@ services:
       - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro
     environment:
       - STALWART_HOSTNAME=mail.localhost
+      - STALWART_ADMIN_PASSWORD=${STALWART_ADMIN_PASSWORD}
     networks:
       hubzilla:
         ipv4_address: 172.20.0.50

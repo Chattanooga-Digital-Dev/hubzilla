@@ -49,7 +49,7 @@ store = "rocksdb"
 # For now, we'll use fallback admin to configure accounts
 [authentication.fallback-admin]
 user = "admin"
-secret = "admin123"
+secret = "%{env:STALWART_ADMIN_PASSWORD}%"
 
 # Logging
 [tracer."stdout"]
