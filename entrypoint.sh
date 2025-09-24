@@ -82,22 +82,9 @@ esac
 
 cd /var/www/html
 
-cat <<SMTPCONF > /etc/ssmtp/ssmtp.conf
-mailhub=${SMTP_HOST}:${SMTP_PORT}
-UseSTARTTLS=${SMTP_USE_STARTTLS}
-root=${SMTP_USER}
-rewriteDomain=${SMTP_DOMAIN}
-FromLineOverride=YES
-hostname=${SMTP_DOMAIN}
-SMTPCONF
-if [ "${SMTP_PASS:-'nil'}" != "nil" ]; then
-	cat <<SMTPCONF >> /etc/ssmtp/ssmtp.conf
-AuthUser=${SMTP_USER}
-AuthPass=${SMTP_PASS}
-SMTPCONF
-fi
-echo "root:${SMTP_USER}@${SMTP_DOMAIN}" > /etc/ssmtp/revaliases
-echo "www-data:${SMTP_USER}@${SMTP_DOMAIN}" >> /etc/ssmtp/revaliases
+# Source and execute SMTP setup script
+source /scripts/setup-smtp.sh
+setup_smtp
 
 # Arrange permissions for folders
 for folder in "${folders=addon extend log store view widget}"; do
