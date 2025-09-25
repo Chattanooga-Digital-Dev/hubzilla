@@ -87,3 +87,6 @@ site/
 
 # Personal project-specific troubleshooting documents
 troubleshooting
+
+#Python virtual environment
+scripts/venv
