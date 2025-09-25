@@ -22,7 +22,7 @@ class EmailProcessor:
         self.port = 143          # IMAP port with STARTTLS
         self.use_ssl = False     # STARTTLS (starts plain, upgrades to TLS)
         
-        # Use existing Stalwart credentials - NO HARDCODED FALLBACKS
+        # Use existing Stalwart credentials
         self.username = os.getenv('SMTP_USER')
         self.password = os.getenv('STALWART_ADMIN_PASSWORD')
         
