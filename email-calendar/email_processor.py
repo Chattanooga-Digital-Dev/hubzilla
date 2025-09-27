@@ -15,13 +15,11 @@ def sanitize_ical_content(ical_string: str) -> str:
     """Sanitize final iCal content to remove problematic escape sequences"""
     # Remove escaped commas that cause PostgreSQL issues
     ical_string = ical_string.replace('\\,', ',')
-    
-    # Remove other problematic escape sequences
     ical_string = ical_string.replace('\\;', ';')
     ical_string = ical_string.replace('\\n', ' ')
     ical_string = ical_string.replace('\\\\', '')
     
-    # Remove markdown formatting that might cause issues
+    # Remove markdown formatting
     ical_string = ical_string.replace('**', '')
     ical_string = ical_string.replace('*', '')
     
@@ -32,7 +30,6 @@ def sanitize_calendar_content(text: str, max_length: int = 250) -> str:
     if not text:
         return ""
     
-    # Convert to string if it's not already
     text = str(text)
     
     # Remove emojis using regex
@@ -62,7 +59,6 @@ def sanitize_calendar_content(text: str, max_length: int = 250) -> str:
     if len(text) > max_length:
         text = text[:max_length].strip() + '...'
     
-    # Strip leading/trailing whitespace
     text = text.strip()
     
     return text
@@ -82,7 +78,7 @@ class HubzillaCalDAVClient:
         self.base_url = 'https://localhost/cdav/'
         self.password = os.getenv('STALWART_ADMIN_PASSWORD', 'admin123')
         
-        # Email to channel mapping
+        # Email to channel mapping - routes events to appropriate Hubzilla channels
         self.email_to_channel = {
             'tech@example.com': 'tech',
             'music@example.com': 'music',
@@ -111,7 +107,6 @@ class HubzillaCalDAVClient:
     def upload_event(self, email_event: EmailEvent) -> bool:
         """Upload calendar event to appropriate Hubzilla channel"""
         try:
-            # Determine target channel
             channel = self.get_channel_from_email(email_event.to)
             
             # Create CalDAV client for the channel
@@ -122,7 +117,6 @@ class HubzillaCalDAVClient:
                 ssl_verify_cert=False  # For local development
             )
             
-            # Get the calendar
             calendar_url = f"{self.base_url}calendars/{channel}/default/"
             calendar = client.calendar(url=calendar_url)
             
@@ -146,32 +140,23 @@ class HubzillaCalDAVClient:
                     # CalDAV requires full calendar structure, not just individual events
                     from icalendar import Calendar as ICalendar
                     
-                    # Create complete calendar document
                     cal = ICalendar()
                     cal.add('prodid', '-//Email Processor//Email to Calendar//EN')
                     cal.add('version', '2.0')
                     cal.add('calscale', 'GREGORIAN')
-                    
-                    # Add the event to the calendar
                     cal.add_component(event)
                     
-                    # Convert to iCal binary data
-                    event_ical_bytes = cal.to_ical()  # Full VCALENDAR document
-                    event_ical_string = event_ical_bytes.decode('utf-8')  # Convert to string
-                    
-                    # Apply final sanitization to remove problematic escape sequences
+                    event_ical_bytes = cal.to_ical()
+                    event_ical_string = event_ical_bytes.decode('utf-8')
                     event_ical_string = sanitize_ical_content(event_ical_string)
-                    
-                    # Convert back to bytes for upload
                     event_ical_bytes = event_ical_string.encode('utf-8')
                     
-                    # Debug: Print the iCal data being uploaded
                     print(f"\n=== iCal Content for {channel} channel ===")
                     print(f"Length: {len(event_ical_string)} characters")
                     print(f"Content:\n{event_ical_string}")
                     print("=== End iCal Content ===")
                     
-                    # Try manual approach like curl (bypass caldav library)
+                    # Use manual HTTP PUT approach (bypass caldav library for reliability)
                     import requests
                     import base64
                     import uuid
@@ -196,23 +181,23 @@ class HubzillaCalDAVClient:
                     )
                     
                     if response.status_code in [200, 201, 204]:
-                        self.logger.info(f"✅ Manual upload succeeded: {response.status_code}")
+                        self.logger.info(f"Manual upload succeeded: {response.status_code}")
                     else:
-                        self.logger.error(f"❌ Manual upload failed: {response.status_code}")
+                        self.logger.error(f"Manual upload failed: {response.status_code}")
                         self.logger.error(f"Response: {response.text[:200]}")
                         return False
                     
                     summary = event.get('SUMMARY', 'No title')
-                    self.logger.info(f"✅ Uploaded '{summary}' to {channel} channel")
+                    self.logger.info(f"Uploaded '{summary}' to {channel} channel")
                     
                 except Exception as e:
-                    self.logger.error(f"❌ Failed to upload event {i+1}: {e}")
+                    self.logger.error(f"Failed to upload event {i+1}: {e}")
                     return False
             
             return True
             
         except Exception as e:
-            self.logger.error(f"❌ CalDAV upload failed: {e}")
+            self.logger.error(f"CalDAV upload failed: {e}")
             return False
 
 class EmailProcessor:
@@ -228,18 +213,16 @@ class EmailProcessor:
         self.username = os.getenv('SMTP_USER')
         self.password = os.getenv('STALWART_ADMIN_PASSWORD')
         
-        # Validate required credentials exist
         if not self.username:
             raise ValueError("SMTP_USER environment variable is required")
         if not self.password:
             raise ValueError("STALWART_ADMIN_PASSWORD environment variable is required")
         
-        # IMAP folder settings
         self.folder = os.getenv('IMAP_FOLDER', 'INBOX')
         self.mark_read = os.getenv('IMAP_MARK_READ', 'false').lower() == 'true'
         
         # Setup logging
-        log_level = os.getenv('LOG_LEVEL', 'DEBUG')  # Change default to DEBUG
+        log_level = os.getenv('LOG_LEVEL', 'DEBUG')
         debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
         
         logging.basicConfig(
@@ -277,7 +260,6 @@ class EmailProcessor:
                     self.logger.debug(f"  To: {msg.to}")
                     self.logger.debug(f"  From: {msg.from_}")
                     
-                    # Check if email has attachments
                     if not msg.attachments:
                         continue
                         
@@ -286,7 +268,6 @@ class EmailProcessor:
                         if attachment.filename and attachment.filename.lower().endswith('.ics'):
                             self.logger.info(f"Found .ics attachment: {attachment.filename}")
                             
-                            # Parse the .ics content
                             events = self._parse_ics_attachment(attachment.payload)
                             if events:
                                 email_events.append(EmailEvent(
@@ -323,24 +304,20 @@ class EmailProcessor:
 def main():
     """Test the email processor with CalDAV upload"""
     try:
-        # Initialize email processor and CalDAV client
         processor = EmailProcessor()
         caldav_client = HubzillaCalDAVClient()
         
-        # Process emails
         email_events = processor.connect_and_process()
         
         print(f"\n=== EMAIL PROCESSING RESULTS ===")
         print(f"Found {len(email_events)} emails with calendar events:")
         
-        # Display and upload events
         for email_event in email_events:
             print(f"\nEmail: {email_event.subject}")
             print(f"   From: {email_event.sender}")
             print(f"   To: {email_event.to}")
             print(f"   Events found: {len(email_event.events)}")
             
-            # Show event details
             for i, event in enumerate(email_event.events, 1):
                 summary = event.get('SUMMARY', 'No title')
                 dtstart = event.get('DTSTART')
@@ -352,14 +329,13 @@ def main():
                 if location:
                     print(f"      Location: {location}")
             
-            # Upload to Hubzilla calendar
             channel = caldav_client.get_channel_from_email(email_event.to)
             print(f"   Target: {channel} channel calendar")
             
             if caldav_client.upload_event(email_event):
-                print(f"   ✅ Successfully uploaded to {channel} channel")
+                print(f"   Successfully uploaded to {channel} channel")
             else:
-                print(f"   ❌ Failed to upload to {channel} channel")
+                print(f"   Failed to upload to {channel} channel")
         
         if len(email_events) == 0:
             print("\nNo emails with .ics attachments found.")
