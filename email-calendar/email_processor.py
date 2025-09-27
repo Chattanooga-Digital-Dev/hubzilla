@@ -165,17 +165,11 @@ class HubzillaCalDAVClient:
                     # Convert back to bytes for upload
                     event_ical_bytes = event_ical_string.encode('utf-8')
                     
-                    # Debug: Print and save the iCal data being uploaded
+                    # Debug: Print the iCal data being uploaded
                     print(f"\n=== iCal Content for {channel} channel ===")
                     print(f"Length: {len(event_ical_string)} characters")
                     print(f"Content:\n{event_ical_string}")
                     print("=== End iCal Content ===")
-                    
-                    # Save to file for comparison
-                    debug_filename = f"debug_event_{channel}_{i}.ics"
-                    with open(debug_filename, 'w') as f:
-                        f.write(event_ical_string)
-                    print(f"Saved debug content to: {debug_filename}")
                     
                     # Try manual approach like curl (bypass caldav library)
                     import requests

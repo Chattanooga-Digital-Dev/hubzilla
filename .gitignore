@@ -89,4 +89,4 @@ site/
 troubleshooting
 
 #Python virtual environment
-scripts/venv
+email-calendar/venv
