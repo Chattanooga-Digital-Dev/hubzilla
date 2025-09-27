@@ -58,9 +58,8 @@ level = "info"
 ansi = false
 enable = true
 
-# Enable detailed SMTP logging  
-[tracer."smtp-debug"]
-type = "stdout"
-level = "debug"
-enable = true
-ansi = false
+# TLS Certificate Configuration
+[certificate."default"]
+cert = "%{file:/opt/stalwart/etc/ssl/localhost.pem}%"
+private-key = "%{file:/opt/stalwart/etc/ssl/localhost-key.pem}%"
+default = true

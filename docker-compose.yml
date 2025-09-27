@@ -88,6 +88,8 @@ services:
     container_name: hubzilla_mailserver
     image: stalwartlabs/stalwart:latest
     restart: unless-stopped
+    depends_on:
+      - hub
     ports:
       - "25:25"     # SMTP
       - "143:143"   # IMAP
@@ -98,6 +100,10 @@ services:
     volumes:
       - stalwart_data:/opt/stalwart
       - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro
+      - ssl_certs:/var/ssl-shared:ro  # Access to mkcert certificates
+      - ./scripts/setup-stalwart-ssl.sh:/usr/local/bin/setup-stalwart-ssl.sh:ro
+      - ./scripts/stalwart-entrypoint.sh:/usr/local/bin/stalwart-entrypoint.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
     environment:
       - STALWART_HOSTNAME=mail.localhost
       - STALWART_ADMIN_PASSWORD=${STALWART_ADMIN_PASSWORD}
