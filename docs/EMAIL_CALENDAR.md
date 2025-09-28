@@ -36,6 +36,8 @@ Events route to channels based on email recipient:
 python email_processor.py
 ```
 
+**Note:** Currently requires manual execution. Automatic processing via cron job is planned for future development.
+
 ## Testing
 1. Send email with `.ics` attachment to configured address
 2. Run email processor
