@@ -1,7 +1,5 @@
 # Environment and secrets
 .env
-.env.local
-.env.*.local
 *.env
 
 # Docker-related files
@@ -89,3 +87,6 @@ site/
 
 # Personal project-specific troubleshooting documents
 troubleshooting
+
+#Python virtual environment
+email-calendar/venv

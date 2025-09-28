@@ -1,0 +1,65 @@
+# Minimal Stalwart Mail Server Configuration for Local Development
+# Based on official documentation minimal configuration example
+
+[server.listener."smtp"]
+bind = ["[::]:25"]
+protocol = "smtp"
+
+[server.listener."submissions"]
+bind = ["[::]:465"]
+protocol = "smtp"
+tls.implicit = true
+
+[server.listener."submission"]
+bind = ["[::]:587"]
+protocol = "smtp"
+
+[server.listener."imap"]
+bind = ["[::]:143"]
+protocol = "imap"
+
+[server.listener."imaptls"]
+bind = ["[::]:993"]
+protocol = "imap"
+tls.implicit = true
+
+[server.listener."management"]
+bind = ["[::]:8080"]
+protocol = "http"
+
+# Storage configuration (required)
+[storage]
+data = "rocksdb"
+fts = "rocksdb"
+blob = "rocksdb"
+lookup = "rocksdb"
+directory = "internal"
+
+[store."rocksdb"]
+type = "rocksdb"
+path = "/opt/stalwart/data"
+compression = "lz4"
+
+# Internal directory for local users
+[directory."internal"]
+type = "internal"
+store = "rocksdb"
+
+# Add local test accounts through admin interface or API
+# For now, we'll use fallback admin to configure accounts
+[authentication.fallback-admin]
+user = "admin"
+secret = "%{env:STALWART_ADMIN_PASSWORD}%"
+
+# Logging
+[tracer."stdout"]
+type = "stdout"
+level = "info"
+ansi = false
+enable = true
+
+# TLS Certificate Configuration - uses DOMAIN for SSL certificates
+[certificate."default"]
+cert = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%.pem}%"
+private-key = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%-key.pem}%"
+default = true

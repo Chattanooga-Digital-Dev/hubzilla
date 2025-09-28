@@ -1,0 +1,14 @@
+# IMAP Email Processing
+imap-tools>=1.5.0
+
+# iCalendar (.ics) File Parsing
+icalendar>=5.0.0
+
+# Environment Variable Management
+python-dotenv>=1.0.0
+
+# CalDAV Integration (for Hubzilla)
+caldav>=1.3.0
+
+# HTTP Requests (for manual CalDAV)
+requests>=2.25.0

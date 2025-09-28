@@ -1,17 +1,8 @@
 #!/bin/bash
 
-# Set up HTTP forwarding for localhost to nginx container for URL rewrite testing
-# This allows Hubzilla's setup wizard to test URL rewriting via localhost
-# Use socat for proper HTTP proxying instead of netcat to avoid header issues
-
-# Install socat if not available
-which socat >/dev/null || apk add --no-cache socat
-
-# HTTPS forwarding with proper HTTP handling
-sh -c 'while true; do socat TCP4-LISTEN:443,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:443; done' &
-
-# HTTP forwarding with proper HTTP handling  
-sh -c 'while true; do socat TCP4-LISTEN:80,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:80; done' &
+# Source and execute HTTP forwarding setup
+source /scripts/setup-http-forwarding.sh
+setup_http_forwarding
 
 ### CHECK FOR, AND SET THE DATABASE ###
 # Skip database initialization if this is the cron container
@@ -22,125 +13,46 @@ if [ "$1" = "crond" ]; then
     exit 0
 fi
 
-CNT=0
-case "${DB_TYPE}" in
-	# WARNING # mysql is still largely untested..
-	[Mm][Yy][Ss][Qq][Ll]|[Mm][Yy][Ss][Qq][Ll][Ii]|[Mm][Aa][Rr][Ii][Aa][Dd][Bb]|0)
-		srv() {	mysql -u "${DB_USER:-hubzilla}" -p "${DB_PASSWORD:-hubzilla}" -h "${DB_HOST:-mariadb}" -P "${DB_PORT:-3306}" "$@"; }
-		db()  { srv -D "${DB_NAME:-hub}" "$@"; }
-		sql() { db -e "$@" ; }
-		while ! srv -e "status" > /dev/null; do
-			echo "Waiting for MariaDB/MySQL to be ready ($((CNT+=1)))"
-			sleep 2
-		done
-		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
-			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
-			# Don't install schema here - let setup wizard handle it
-			FORCE_CONFIG=0
-		else
-			echo "======== DATABASE: schema already exists ========"
-			FORCE_CONFIG=1
-		fi
-		DB_TYPE=0
-	;;
-	[Pp][Ss][Qq][Ll]|[Pp][Gg][Ss][Qq][Ll]|[Pp][Oo][Ss][Tt][Gg][Rr][Ee][Ss]|1)
-		db() { PGPASSWORD="${DB_PASSWORD=hubzilla}" psql -h "${DB_HOST=postgres}" -p "${DB_PORT=5432}" -U "${DB_USER=hubzilla}" -d "${DB_NAME=hub}" -wt "$@"; }
-		sql() {	db -c "$@"; }
-		while ! sql '\q'; do
-			echo "Waiting for Postgres to be ready ($((CNT+=1)))"
-			sleep 2
-		done
-		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
-			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
-			# Don't install schema here - let setup wizard handle it
-			FORCE_CONFIG=0
-		else
-			echo "======== DATABASE: schema already exists ========"
-			FORCE_CONFIG=1
-		fi
-		DB_TYPE=1
-	;;
-	*)
-		echo "======== ERROR: Unknown DB_TYPE=${DB_TYPE=Unknown} ========"
-		echo "======== RESULT: Skipping DB Setup/Check ========"
-		FORCE_CONFIG=0
-	;;
-esac
+# Source and execute database setup script
+source /scripts/setup-database.sh
+setup_database
 
 cd /var/www/html
 
-cat <<SMTPCONF > /etc/ssmtp/ssmtp.conf
-mailhub=${SMTP_HOST}:${SMTP_PORT}
-UseSTARTTLS=${SMTP_USE_STARTTLS}
-root=${SMTP_USER}@${SMTP_DOMAIN}
-rewriteDomain=${SMTP_DOMAIN}
-FromLineOverride=YES
-SMTPCONF
-if [ "${SMTP_PASS:-'nil'}" != "nil" ]; then
-	cat <<SMTPCONF >> /etc/ssmtp/ssmtp.conf
-AuthUser=${SMTP_USER}
-AuthPass=${SMTP_PASS}
-SMTPCONF
-fi
-echo "root:${SMTP_USER}@${SMTP_DOMAIN}" > /etc/ssmtp/revaliases
-echo "www-data:${SMTP_USER}@${SMTP_DOMAIN}" >> /etc/ssmtp/revaliases
+# Source and execute SMTP setup script
+source /scripts/setup-smtp.sh
+setup_smtp
 
-# Arrange permissions for folders
-for folder in "${folders=addon extend log store view widget}"; do
-	echo "Fixing folder: $folder"
-	if [ "$folder" = view ]; then
-        chmod -R 755 $folder
-	else
-		chmod 755 $folder
-    fi
-done
+# Source and execute permissions setup script
+source /scripts/setup-permissions.sh
+setup_permissions
 
-# Generate SSL certificates if they don't exist
-if [ ! -f "/var/ssl-shared/localhost.pem" ] || [ ! -f "/var/ssl-shared/localhost-key.pem" ]; then
-	echo "======== GENERATING: SSL certificates ========"
-	mkdir -p /var/ssl-shared
-	# Create local CA and generate certificates
-	mkcert -install
-	mkcert -key-file /var/ssl-shared/localhost-key.pem -cert-file /var/ssl-shared/localhost.pem localhost 127.0.0.1 ::1
-	# Set proper permissions
-	chmod 644 /var/ssl-shared/*.pem
-	echo "======== SUCCESS: SSL certificates generated ========"
-else
-	echo "======== SSL certificates already exist, skipping generation ========"
-	# Ensure mkcert CA is installed for existing certificates
-	mkcert -install >/dev/null 2>&1 || true
-fi
+# Source and execute SSL setup script
+source /scripts/setup-ssl.sh
+setup_ssl
 
-# Install mkcert root CA in system trust store for Hubzilla SSL validation
-echo "======== INSTALLING: mkcert CA in system trust store ========"
-if [ -f "/root/.local/share/mkcert/rootCA.pem" ]; then
-	# Ensure ca-certificates package is available
-	which update-ca-certificates >/dev/null || apk add --no-cache ca-certificates
-	# Copy mkcert CA to system CA directory
-	cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
-	# Update system CA certificates
-	update-ca-certificates >/dev/null 2>&1
-	echo "======== SUCCESS: mkcert CA installed in system trust store ========"
-else
-	echo "======== WARNING: mkcert CA not found, SSL validation may fail ========"
-fi
-
-# Copy nginx configuration to shared volume
-if [ -f "/etc/hubzilla/default.conf" ]; then
-	echo "======== COPYING: nginx configuration ========"
+# Generate nginx configuration from template
+if [ -f "/etc/hubzilla/default.conf.template" ]; then
+	echo "======== GENERATING: nginx configuration from template ========"
 	mkdir -p /var/nginx-config
-	cp /etc/hubzilla/default.conf /var/nginx-config/
+	# Generate config file from template using DOMAIN environment variable
+	envsubst '${DOMAIN}' < /etc/hubzilla/default.conf.template > /var/nginx-config/default.conf
 	chmod 644 /var/nginx-config/default.conf
-	echo "======== SUCCESS: nginx configuration copied ========"
+	echo "======== SUCCESS: nginx configuration generated for domain: ${DOMAIN} ========"
 else
-	echo "======== WARNING: nginx config not found at /etc/hubzilla/default.conf ========"
+	echo "======== ERROR: nginx config template not found at /etc/hubzilla/default.conf.template ========"
+	echo "Available files in /etc/hubzilla/:"
+	ls -la /etc/hubzilla/ || echo "Directory does not exist"
 fi
 
 chown www-data:www-data .
 
 ### START .HTCONFIG.PHP ###
-# If database is detected, .htconfig.php will be created
-# otherwise, the user will need to produce their own
+# Disable automatic .htconfig.php regeneration to preserve existing installations
+# This was causing registration and configuration issues on container restart
+echo "======== SKIPPING: .htconfig.php auto-generation (preserves existing setup) ========"
+FORCE_CONFIG=0
+
 if [ ${FORCE_CONFIG:-0} != 0 ]; then
 	[ -f .htconfig.php ] && rm '.htconfig.php'
 	random_string() {	tr -dc '0-9a-f' </dev/urandom | head -c ${1:-64} ; }
@@ -157,7 +69,6 @@ if [ ${FORCE_CONFIG:-0} != 0 ]; then
 // They can also be set by 'util/pconfig'
 App::\$config['system']['timezone'] = '${TIMEZONE}';
 App::\$config['system']['baseurl'] = 'https://${DOMAIN}';
-App::\$config['system']['sitename'] = '${SITE_NAME}';
 App::\$config['system']['location_hash'] = '$(random_string)';
 App::\$config['system']['transport_security_header'] = 1;
 App::\$config['system']['content_security_policy'] = 1;
@@ -234,9 +145,6 @@ case "${DEBUG_PHP}" in
 	;;
 esac
 
-chown www-data:www-data .htconfig.php
-### END .HTCONFIG.PHP ###
-
 	if [ ${REDIS_PATH:-"nil"} != "nil" ]; then
 		util/config system session_save_handler redis
 		util/config system session_save_path ${REDIS_PATH}
@@ -267,7 +175,10 @@ chown www-data:www-data .htconfig.php
 	util/config system ignore_imagick true
 	util/config system register_policy ${REGISTER_POLICY}
 	#util/config system disable_email_validation 1
+
+chown www-data:www-data .htconfig.php
 fi
+### END .HTCONFIG.PHP ###
 
 # Extra configurations needed if Hubzilla version is 4 or below
 CURVER=$(printf "%d" "${HZ_VERSION}")
@@ -291,14 +202,16 @@ fi
 chown -R www-data:www-data /var/www/html/*
 chown -R www-data:www-data /var/www/html/.*
 
-# Check if this is initial setup (no user accounts created yet)
-ACCOUNT_COUNT=$(sql 'SELECT count(*) FROM account;' 2>/dev/null | tail -1 | tr -d ' ')
-if [ "${ACCOUNT_COUNT:-0}" = "0" ]; then
-	echo "======== INITIAL SETUP: Removing .htconfig.php to show setup wizard ========"
-	rm -f /var/www/html/.htconfig.php
+# Simple installation check - preserve .htconfig.php if it exists
+if [ -f /var/www/html/.htconfig.php ]; then
+	echo "======== EXISTING INSTALLATION: .htconfig.php found, preserving it ========"
 else
-	echo "======== EXISTING INSTALLATION: Keeping .htconfig.php ========"
+	echo "======== INITIAL SETUP: No .htconfig.php found, setup wizard will show ========"
 fi
+
+# Source and execute email monitoring setup
+source /scripts/setup-email-monitoring.sh
+setup_email_monitoring
 
 echo "Starting $@"
 exec "$@"
