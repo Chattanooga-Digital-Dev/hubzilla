@@ -32,7 +32,7 @@ def sanitize_calendar_content(text: str, max_length: int = 250) -> str:
     
     text = str(text)
     
-    # Remove emojis using regex
+    # Remove emojis
     emoji_pattern = re.compile("["
         u"\U0001F600-\U0001F64F"  # emoticons
         u"\U0001F300-\U0001F5FF"  # symbols & pictographs
