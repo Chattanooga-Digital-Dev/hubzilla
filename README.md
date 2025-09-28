@@ -54,7 +54,8 @@ docker logs -f hubzilla_itself
    Database Type: PostgreSQL
    ```
 
-3. **Create admin account (Step 3):** Use any email address
+3. **Create admin account (Step 3):** 
+- Use admin@example.com for the email address
 
 4. **Complete remaining steps** in the wizard
 
@@ -91,7 +92,8 @@ docker compose down
 
 ## Email Verification
 
-**Option 1:** Configure the included Stalwart mail server (see [docs/EMAIL_CONFIG.md](docs/EMAIL_CONFIG.md))
+**Option 1:** Configure the included Stalwart mail server and Thunderbird email application 
+- (see [docs/EMAIL_CONFIG.md](docs/EMAIL_CONFIG.md)) for instructions
 
 **Option 2:** Manual verification
 ```bash
