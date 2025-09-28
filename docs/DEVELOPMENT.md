@@ -5,9 +5,20 @@
 # Restart everything
 docker compose down && docker compose up -d
 
-# Rebuild from scratch
+## Reset Data
+```bash
+# Reset database only
+docker compose down
+docker volume rm hubzilla_db_data
+docker compose up -d
+
+# Reset everything
+docker compose down
+docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_nginx_config hubzilla_stalwart_data
+docker image rm hubzilla-hub hubzilla-hub_cron hubzilla-hub_web
 docker compose build --no-cache
 docker compose up -d
+```
 
 # View logs
 docker compose logs
@@ -33,19 +44,6 @@ docker exec hubzilla_database pg_dump -U hubzilla -d hub > backup.sql
 docker exec -i hubzilla_database psql -U hubzilla -d hub < backup.sql
 ```
 
-## Reset Data
-```bash
-# Reset database only
-docker compose down
-docker volume rm hubzilla_db_data
-docker compose up -d
-
-# Reset everything
-docker compose down
-docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_nginx_config
-docker compose up -d
-```
-
 ## Health Checks
 ```bash
 # Check container status
@@ -57,8 +55,6 @@ docker exec hubzilla_itself sh -c 'PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOS
 # Test web server
 curl -k -I https://localhost
 
-# Test URL rewriting
-docker exec hubzilla_itself curl -k -s https://localhost/setup/testrewrite
 ```
 
 ## Container Network
