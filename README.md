@@ -2,6 +2,16 @@
 
 A fully containerized Hubzilla setup for local development with HTTPS support.
 
+## Features
+
+- **HTTPS with valid certificates** - Uses mkcert for browser-trusted localhost certificates
+- **PostgreSQL database** - Persistent data storage
+- **localhost domain** - Should work locally on any machine without DNS configuration
+
+## Disclaimer
+
+This project was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development, may contain bugs, and is intended for local development and testing only. **Not for production use.**
+
 ## Quick Start
 
 ### Prerequisites
@@ -9,14 +19,27 @@ A fully containerized Hubzilla setup for local development with HTTPS support.
 - Git
 - mkcert (for SSL certificates)
 
+
 ### 1. SSL Setup
 ```bash
-# Install mkcert
-sudo apt install mkcert          # Linux
-# brew install mkcert            # macOS
+# Linux/WSL
+sudo apt install mkcert
 
-# Initialize (one-time setup)
+# macOS  
+brew install mkcert
+
+# Windows: Download from https://github.com/FiloSottile/mkcert/releases
+# NOTE: For Windows+WSL2, install mkcert on Windows host (not WSL2)
+# This ensures mkcert -install adds the CA to Windows certificate store
+
+# Initialize (one-time setup) - MUST run as Administrator
 mkcert -install
+# Confirms popup to add CA to Windows certificate store
+
+# If automatic installation fails in Windows, manually add certificate:
+# 1. Press Win+R → type 'mmc' → Add Certificates snap-in → Computer account
+# 2. Navigate: Trusted Root Certification Authorities → Certificates
+# 3. Right-click → All Tasks → Import → Select rootCA.pem from mkcert -CAROOT path
 ```
 
 ### 2. Clone and Configure
@@ -27,9 +50,13 @@ cp .env.example .env
 ```
 
 **Edit .env file:**
-- Set `MKCERT_PATH` to your mkcert directory (run `mkcert -CAROOT` to find it)
+1. Find your mkcert path: `mkcert -CAROOT`
+2. Set `MKCERT_PATH` in .env to that exact path
+
+**Common paths:**
 - Linux/WSL: `MKCERT_PATH=~/.local/share/mkcert`
 - macOS: `MKCERT_PATH=~/Library/Application Support/mkcert`
+- Windows+WSL2: `MKCERT_PATH=/mnt/c/Users/USERNAME/AppData/Local/mkcert`
 
 ### 3. Build and Start
 ```bash
@@ -134,7 +161,7 @@ docker compose up -d
 
 ## Production Warning
 
-This setup is for local development only. For production deployment, see [docs/PRODUCTION.md](docs/PRODUCTION.md).
+This setup is for local development only. For production deployment suggestions, see [docs/PRODUCTION.md](docs/PRODUCTION.md).
 
 ## Contributing
 

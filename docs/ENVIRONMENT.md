@@ -2,11 +2,26 @@
 
 Copy `.env.example` to `.env` and configure:
 
+
 ## Required
 ```bash
-# SSL
-MKCERT_PATH=~/.local/share/mkcert  # Path from `mkcert -CAROOT`
 
+# 1. Find your path: mkcert -CAROOT
+# 2. Copy that exact path to MKCERT_PATH below
+MKCERT_PATH=YOUR_MKCERT_PATH_HERE
+
+Examples: 
+    Linux/WSL:
+    MKCERT_PATH=~/.local/share/mkcert
+
+    macOS:
+    MKCERT_PATH=~/Library/Application Support/mkcert  
+
+    Windows WSL2:
+    MKCERT_PATH=/mnt/c/Users/USERNAME/AppData/Local/mkcert
+```
+
+```bash
 # Site
 DOMAIN=localhost
 ADMIN_EMAIL=admin@yourdomain.com

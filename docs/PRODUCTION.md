@@ -2,7 +2,7 @@
 
 **Warning: This setup is for local development only.**
 
-## Required Changes for Production
+## Suggested Changes for Production
 
 ### SSL Certificates
 - Replace mkcert with real SSL certificates (Let's Encrypt, commercial CA)
