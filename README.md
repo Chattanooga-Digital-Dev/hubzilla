@@ -22,7 +22,7 @@ This project was developed with AI assistance and is provided "as-is" without wa
 
 ### 1. SSL Setup
 ```bash
-# Linux/WSL
+# Debian-based Linux/WSL
 sudo apt install mkcert
 
 # macOS  

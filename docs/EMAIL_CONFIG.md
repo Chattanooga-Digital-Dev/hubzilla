@@ -34,6 +34,22 @@ Create these aliases under admin@example.com:
 
 [<img src="Thunderbird.png" width="500" alt="Thunderbird Email Client with Email Aliases"/>](Thunderbird.png)
 
+## Troubleshooting Thunderbird & Stalwart
+- If Thunderbird won’t trust your local HTTPS endpoint, you probably need to import your mkcert CA under Authorities:
+   1. Open Preferences → Privacy & Security → Certificates → View Certificates…
+
+   2. Select the Authorities tab
+
+   3. Click Import… and choose your mkcert rootCA.pem (default locations):
+
+      - Linux/macOS (Homebrew, APT): $HOME/.local/share/mkcert/rootCA.pem
+
+      - macOS (official pkg or brew install): $HOME/Library/Application Support/mkcert/rootCA.pem
+
+      - Windows (choco, Scoop, manual): %APPDATA%\mkcert\rootCA.pem
+
+   4. Tick Trust this CA to identify websites, click OK, then restart Thunderbird.
+
 ## Bypass Email Verification
 ```bash
 # Get verification token
