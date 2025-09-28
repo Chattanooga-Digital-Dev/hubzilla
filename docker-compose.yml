@@ -105,8 +105,9 @@ services:
       - ./scripts/stalwart-entrypoint.sh:/usr/local/bin/stalwart-entrypoint.sh:ro
     entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
     environment:
-      - STALWART_HOSTNAME=mail.localhost
+      - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
       - STALWART_ADMIN_PASSWORD=${STALWART_ADMIN_PASSWORD}
+      - DOMAIN=${DOMAIN}
     networks:
       hubzilla:
         ipv4_address: 172.20.0.50

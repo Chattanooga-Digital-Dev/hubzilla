@@ -9,7 +9,7 @@ setup_stalwart_ssl() {
 	local max_wait=30
 	local count=0
 	
-	while [ ! -f "/var/ssl-shared/localhost.pem" ] || [ ! -f "/var/ssl-shared/localhost-key.pem" ]; do
+	while [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; do
 		if [ $count -ge $max_wait ]; then
 			echo "ERROR: SSL certificates not found after ${max_wait} seconds"
 			echo "Make sure the main Hubzilla container has generated certificates"
@@ -25,15 +25,15 @@ setup_stalwart_ssl() {
 	
 	# Copy certificates from shared volume
 	echo "Copying SSL certificates to Stalwart..."
-	cp /var/ssl-shared/localhost.pem /opt/stalwart/etc/ssl/localhost.pem
-	cp /var/ssl-shared/localhost-key.pem /opt/stalwart/etc/ssl/localhost-key.pem
+	cp /var/ssl-shared/${DOMAIN}.pem /opt/stalwart/etc/ssl/${DOMAIN}.pem
+	cp /var/ssl-shared/${DOMAIN}-key.pem /opt/stalwart/etc/ssl/${DOMAIN}-key.pem
 	
 	# Set proper permissions
-	chmod 644 /opt/stalwart/etc/ssl/localhost.pem
-	chmod 600 /opt/stalwart/etc/ssl/localhost-key.pem
+	chmod 644 /opt/stalwart/etc/ssl/${DOMAIN}.pem
+	chmod 600 /opt/stalwart/etc/ssl/${DOMAIN}-key.pem
 	
 	# Verify certificates were copied
-	if [ -f "/opt/stalwart/etc/ssl/localhost.pem" ] && [ -f "/opt/stalwart/etc/ssl/localhost-key.pem" ]; then
+	if [ -f "/opt/stalwart/etc/ssl/${DOMAIN}.pem" ] && [ -f "/opt/stalwart/etc/ssl/${DOMAIN}-key.pem" ]; then
 		echo "======== SUCCESS: Stalwart SSL certificates configured ========"
 		return 0
 	else

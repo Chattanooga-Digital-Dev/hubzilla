@@ -58,8 +58,8 @@ level = "info"
 ansi = false
 enable = true
 
-# TLS Certificate Configuration
+# TLS Certificate Configuration - uses DOMAIN for SSL certificates
 [certificate."default"]
-cert = "%{file:/opt/stalwart/etc/ssl/localhost.pem}%"
-private-key = "%{file:/opt/stalwart/etc/ssl/localhost-key.pem}%"
+cert = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%.pem}%"
+private-key = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%-key.pem}%"
 default = true
