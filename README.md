@@ -134,7 +134,7 @@ The project includes an integrated email server that can send verification email
    - **Full Name:** Admin
    - **Email Address:** admin@example.com
    - **IMAP Server:** localhost, Port 993, SSL/TLS, Normal Password
-   - **SMTP Server:** localhost, Port 465, SSL/TLS, Normal Password
+   - **SMTP Server:** localhost, Port 587, STARTTLS, Normal Password
 
 **Option 2: Manual Verification (Backup Method)**
 
@@ -235,7 +235,7 @@ Configure Thunderbird or other email clients with these settings:
 
 - **Account:** admin@example.com
 - **IMAP Server:** localhost, Port 993, SSL/TLS
-- **SMTP Server:** localhost, Port 465, SSL/TLS
+- **SMTP Server:** localhost, Port 587, STARTTLS
 - **Authentication:** Normal Password
 - **Password:** Value from `STALWART_ADMIN_PASSWORD` in `.env`
 
