@@ -3,10 +3,7 @@
 # HTTP Forwarding Setup Function
 # Sets up HTTP forwarding for localhost to nginx container for URL rewrite testing
 setup_http_forwarding() {
-	# Set up HTTP forwarding for localhost to nginx container for URL rewrite testing
-	# This allows Hubzilla's setup wizard to test URL rewriting via localhost
 	# Use socat for proper HTTP proxying instead of netcat to avoid header issues
-
 	# Install socat if not available
 	which socat >/dev/null || apk add --no-cache socat
 

@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Permissions Setup Function
 # Sets proper permissions on Hubzilla folders and scripts
 setup_permissions() {
-	# Arrange permissions for folders
 	for folder in "${folders=addon extend log store view widget}"; do
 		echo "Fixing folder: $folder"
 		if [ "$folder" = view ]; then
@@ -13,11 +11,10 @@ setup_permissions() {
 		fi
 	done
 	
-	# Set executable permissions on scripts
 	echo "Setting executable permissions on scripts..."
 	chmod +x /scripts/*.sh
 	
-	# Stalwart-specific script permissions (if they exist)
+	# Stalwart-specific script permissions
 	if [ -f "/scripts/setup-stalwart-ssl.sh" ]; then
 		chmod +x /scripts/setup-stalwart-ssl.sh
 		echo "Made setup-stalwart-ssl.sh executable"

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# SSL Certificate Setup Function
-# Generates SSL certificates using mkcert and installs CA in system trust store
 setup_ssl() {
 	# Generate SSL certificates if they don't exist
 	if [ ! -f "/var/ssl-shared/localhost.pem" ] || [ ! -f "/var/ssl-shared/localhost-key.pem" ]; then
