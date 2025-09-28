@@ -31,15 +31,18 @@ setup_permissions
 source /scripts/setup-ssl.sh
 setup_ssl
 
-# Copy nginx configuration to shared volume
-if [ -f "/etc/hubzilla/default.conf" ]; then
-	echo "======== COPYING: nginx configuration ========"
+# Generate nginx configuration from template
+if [ -f "/etc/hubzilla/default.conf.template" ]; then
+	echo "======== GENERATING: nginx configuration from template ========"
 	mkdir -p /var/nginx-config
-	cp /etc/hubzilla/default.conf /var/nginx-config/
+	# Generate config file from template using DOMAIN environment variable
+	envsubst '${DOMAIN}' < /etc/hubzilla/default.conf.template > /var/nginx-config/default.conf
 	chmod 644 /var/nginx-config/default.conf
-	echo "======== SUCCESS: nginx configuration copied ========"
+	echo "======== SUCCESS: nginx configuration generated for domain: ${DOMAIN} ========"
 else
-	echo "======== WARNING: nginx config not found at /etc/hubzilla/default.conf ========"
+	echo "======== ERROR: nginx config template not found at /etc/hubzilla/default.conf.template ========"
+	echo "Available files in /etc/hubzilla/:"
+	ls -la /etc/hubzilla/ || echo "Directory does not exist"
 fi
 
 chown www-data:www-data .

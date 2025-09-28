@@ -5,7 +5,7 @@
 
 set -e
 
-CERT_FILE="/etc/nginx/ssl/localhost.pem"
+CERT_FILE="/etc/nginx/ssl/${DOMAIN}.pem"
 
 # Wait for the certificate to exist
 until [ -f "${CERT_FILE}" ]; do
