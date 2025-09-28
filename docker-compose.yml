@@ -39,10 +39,21 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - nginx_config:/etc/nginx/conf.d:ro
-      - ssl_certs:/etc/nginx/ssl:ro
-      - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
-      - ./scripts/start-nginx.sh:/usr/local/bin/start-nginx.sh:ro
+      - type: volume
+        source: nginx_config
+        target: /etc/nginx/conf.d
+        read_only: true
+      - type: volume
+        source: ssl_certs
+        target: /etc/nginx/ssl
+        read_only: true
+      - type: volume
+        source: web_root
+        target: /var/www/html
+      - type: bind
+        source: ./scripts/start-nginx.sh
+        target: /usr/local/bin/start-nginx.sh
+        read_only: true
     command: ["/usr/local/bin/start-nginx.sh"]
     networks:
       hubzilla:
@@ -60,10 +71,19 @@ services:
       hubzilla:
         ipv4_address: 172.20.0.20
     volumes:
-      - web_root:/var/www/html:Z            # Retain the capital Z (SELinux permission issues)
-      - ssl_certs:/var/ssl-shared
-      - nginx_config:/var/nginx-config
-      - ${MKCERT_PATH}:/root/.local/share/mkcert:ro
+      - type: volume
+        source: web_root
+        target: /var/www/html
+      - type: volume
+        source: ssl_certs
+        target: /var/ssl-shared
+      - type: volume
+        source: nginx_config
+        target: /var/nginx-config
+      - type: bind
+        source: ${MKCERT_PATH}
+        target: /root/.local/share/mkcert
+        read_only: true
     healthcheck:
       test: ["CMD-SHELL", "test -f /var/nginx-config/default.conf || exit 1"]
       interval: 5s
@@ -98,11 +118,25 @@ services:
       - "587:587"   # SMTP submission
       - "8080:8080" # Web admin
     volumes:
-      - stalwart_data:/opt/stalwart
-      - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro
-      - ssl_certs:/var/ssl-shared:ro  # Access to mkcert certificates
-      - ./scripts/setup-stalwart-ssl.sh:/usr/local/bin/setup-stalwart-ssl.sh:ro
-      - ./scripts/stalwart-entrypoint.sh:/usr/local/bin/stalwart-entrypoint.sh:ro
+      - type: volume
+        source: stalwart_data
+        target: /opt/stalwart
+      - type: bind
+        source: ./stalwart-config/config.toml
+        target: /opt/stalwart/etc/config.toml
+        read_only: true
+      - type: volume
+        source: ssl_certs
+        target: /var/ssl-shared
+        read_only: true
+      - type: bind
+        source: ./scripts/setup-stalwart-ssl.sh
+        target: /usr/local/bin/setup-stalwart-ssl.sh
+        read_only: true
+      - type: bind
+        source: ./scripts/stalwart-entrypoint.sh
+        target: /usr/local/bin/stalwart-entrypoint.sh
+        read_only: true
     entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
     environment:
       - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
