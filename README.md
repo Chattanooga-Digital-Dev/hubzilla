@@ -89,6 +89,14 @@ docker logs -f hubzilla_itself
 ### 5. Access Your Site
 Your Hubzilla instance: **https://localhost**
 
+## Screenshots
+
+### Channel Homepage
+[<img src="docs/ChannelHome.png" width="400" alt="Hubzilla Channel Homepage"/>](docs/ChannelHome.png)
+
+### Channels Overview
+[<img src="docs/channels.png" width="400" alt="Hubzilla Channels View"/>](docs/channels.png)
+
 ## Container Overview
 
 | Service | Purpose | Port |

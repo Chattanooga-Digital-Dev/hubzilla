@@ -6,6 +6,8 @@
 - URL: https://localhost:8080
 - Login: `admin` / password from `.env` (`STALWART_ADMIN_PASSWORD`)
 
+[<img src="Stalwart.png" width="500" alt="Stalwart Mail Server Web Interface"/>](Stalwart.png)
+
 ### Create Domain
 1. Go to "Domains" → Create new domain: `example.com`
 
@@ -29,6 +31,8 @@ Create these aliases under admin@example.com:
 - IMAP: localhost:993 (SSL/TLS)
 - SMTP: localhost:587 (STARTTLS)
 - Password: Value from `STALWART_ADMIN_PASSWORD`
+
+[<img src="Thunderbird.png" width="500" alt="Thunderbird Email Client with Email Aliases"/>](Thunderbird.png)
 
 ## Bypass Email Verification
 ```bash

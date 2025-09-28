@@ -10,6 +10,16 @@ source venv/bin/activate          # Linux/macOS/WSL
 pip install -r requirements.txt
 ```
 
+## Usage
+```bash
+# From email-calendar directory
+python email_processor.py
+```
+**Note:** Currently requires manual execution. Automatic processing via cron job is planned for future development.
+
+### Email Processor in Action
+[<img src="email_processor.png" width="600" alt="Email Processor Script Running"/>](email_processor.png)
+
 ## Configuration
 Uses environment variables from project root `.env`:
 ```bash
@@ -30,18 +40,14 @@ Events route to channels based on email recipient:
 | community@yourdomain.com | community | Community events |
 | admin@yourdomain.com | admin | Fallback |
 
-## Usage
-```bash
-# From email-calendar directory
-python email_processor.py
-```
-
-**Note:** Currently requires manual execution. Automatic processing via cron job is planned for future development.
 
 ## Testing
 1. Send email with `.ics` attachment to configured address
 2. Run email processor
 3. Check corresponding Hubzilla channel calendar for uploaded event
+
+### Calendar Event Example
+[<img src="CalendarExample.png" width="500" alt="Hubzilla Calendar with Imported Events"/>](CalendarExample.png)
 
 ## How It Works
 1. Connects to Stalwart IMAP server
