@@ -18,7 +18,7 @@ python email_processor.py
 **Note:** Currently requires manual execution. Automatic processing via cron job is planned for future development.
 
 ### Email Processor in Action
-[<img src="email_processor.png" width="600" alt="Email Processor Script Running"/>](email_processor.png)
+[<img src="screenshots/email_processor.png" width="600" alt="Email Processor Script Running"/>](screenshots/email_processor.png)
 
 ## Configuration
 Uses environment variables from project root `.env`:
@@ -47,7 +47,7 @@ Events route to channels based on email recipient:
 3. Check corresponding Hubzilla channel calendar for uploaded event
 
 ### Calendar Event Example
-[<img src="CalendarExample.png" width="500" alt="Hubzilla Calendar with Imported Events"/>](CalendarExample.png)
+[<img src="screenshots/CalendarExample.png" width="500" alt="Hubzilla Calendar with Imported Events"/>](screenshots/CalendarExample.png)
 
 ## How It Works
 1. Connects to Stalwart IMAP server

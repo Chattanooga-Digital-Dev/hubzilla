@@ -6,7 +6,7 @@
 - URL: https://localhost:8080
 - Login: `admin` / password from `.env` (`STALWART_ADMIN_PASSWORD`)
 
-[<img src="Stalwart.png" width="500" alt="Stalwart Mail Server Web Interface"/>](Stalwart.png)
+[<img src="screenshots/Stalwart.png" width="500" alt="Stalwart Mail Server Web Interface"/>](screenshots/Stalwart.png)
 
 ### Create Domain
 1. Go to "Domains" → Create new domain: `example.com`
@@ -32,7 +32,7 @@ Create these aliases under admin@example.com:
 - SMTP: localhost:587 (STARTTLS)
 - Password: Value from `STALWART_ADMIN_PASSWORD`
 
-[<img src="Thunderbird.png" width="500" alt="Thunderbird Email Client with Email Aliases"/>](Thunderbird.png)
+[<img src="screenshots/Thunderbird.png" width="500" alt="Thunderbird Email Client with Email Aliases"/>](screenshots/Thunderbird.png)
 
 ## Troubleshooting Thunderbird & Stalwart
 - If Thunderbird won’t trust your local HTTPS endpoint, you probably need to import your mkcert CA under Authorities:

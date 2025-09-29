@@ -92,10 +92,10 @@ Your Hubzilla instance: **https://localhost**
 ## Screenshots
 
 ### Channel Homepage
-[<img src="docs/ChannelHome.png" width="400" alt="Hubzilla Channel Homepage"/>](docs/ChannelHome.png)
+[<img src="docs/screenshots/ChannelHome.png" width="400" alt="Hubzilla Channel Homepage"/>](docs/screenshots/ChannelHome.png)
 
 ### Channels Overview
-[<img src="docs/channels.png" width="400" alt="Hubzilla Channels View"/>](docs/channels.png)
+[<img src="docs/screenshots/channels.png" width="400" alt="Hubzilla Channels View"/>](docs/screenshots/channels.png)
 
 ## Container Overview
 
