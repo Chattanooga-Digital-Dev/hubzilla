@@ -66,7 +66,7 @@ setup_ssl() {
 				mkcert -install
 			fi
 		fi
-		mkcert -key-file /var/ssl-shared/localhost-key.pem -cert-file /var/ssl-shared/localhost.pem localhost 127.0.0.1 ::1
+		mkcert -key-file /var/ssl-shared/localhost-key.pem -cert-file /var/ssl-shared/localhost.pem ${DOMAIN} 127.0.0.1 ::1
 		# Set proper permissions
 		chmod 644 /var/ssl-shared/*.pem
 		echo "======== SUCCESS: SSL certificates generated ========"
