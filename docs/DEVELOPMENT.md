@@ -58,10 +58,12 @@ curl -k -I https://localhost
 ```
 
 ## Container Network
-| Container | IP | Purpose |
+**Note:** Service names (for Docker networking) are shown first, with container names in parentheses. Use service names in scripts and docker-compose.yml configuration. Use container names for `docker exec` and `docker logs` commands.
+
+| Service Name (Container Name) | IP | Purpose |
 |-----------|----|----|
-| hubzilla_webserver | 172.20.0.10 | Nginx proxy |
-| hubzilla_itself | 172.20.0.20 | PHP-FPM app |
-| hubzilla_database | 172.20.0.30 | PostgreSQL |
-| hubzilla_cronjob | 172.20.0.40 | Background tasks |
-| hubzilla_mailserver | 172.20.0.50 | Stalwart mail |
+| hub_web (hubzilla_webserver) | 172.20.0.10 | Nginx proxy |
+| hub (hubzilla_itself) | 172.20.0.20 | PHP-FPM app |
+| hub_db (hubzilla_database) | 172.20.0.30 | PostgreSQL |
+| hub_cron (hubzilla_cronjob) | 172.20.0.40 | Background tasks |
+| stalwart (hubzilla_mailserver) | 172.20.0.50 | Stalwart mail |
