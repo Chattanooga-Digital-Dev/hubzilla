@@ -35,7 +35,28 @@ Create these aliases under admin@example.com:
 [<img src="screenshots/Thunderbird.png" width="500" alt="Thunderbird Email Client with Email Aliases"/>](screenshots/Thunderbird.png)
 
 ## Troubleshooting Thunderbird & Stalwart
-- If Thunderbird won’t trust your local HTTPS endpoint, you probably need to import your mkcert CA under Authorities:
+
+### View recent logs:
+```bash
+docker logs hubzilla_mailserver
+```
+### Follow logs in real-time:
+```bash
+docker logs -f hubzilla_mailserver
+```
+### View last 50 lines:
+```bash
+docker logs --tail 50 hubzilla_mailserver
+```
+### Search for errors:
+```bash
+docker logs hubzilla_mailserver 2>&1 | grep -i error
+```
+### Search for IMAP-related issues:
+```bash
+docker logs hubzilla_mailserver 2>&1 | grep -i imap
+```
+### If Thunderbird won’t trust your local HTTPS endpoint, you probably need to import your mkcert CA under Authorities:
    1. Open Preferences → Privacy & Security → Certificates → View Certificates…
 
    2. Select the Authorities tab
@@ -49,11 +70,3 @@ Create these aliases under admin@example.com:
       - Windows (choco, Scoop, manual): %APPDATA%\mkcert\rootCA.pem
 
    4. Tick Trust this CA to identify websites, click OK, then restart Thunderbird.
-
-## Bypass Email Verification
-```bash
-# Get verification token
-docker exec hubzilla_itself sh -c 'PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT reg_hash FROM register WHERE reg_email='\''your-email@example.com'\'';"'
-
-# Visit: https://localhost/register/verify/TOKEN
-```
