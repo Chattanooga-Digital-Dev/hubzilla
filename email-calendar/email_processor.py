@@ -75,12 +75,17 @@ class HubzillaCalDAVClient:
     """CalDAV client for uploading events to Hubzilla calendars"""
     
     def __init__(self):
-        self.base_url = os.getenv('CALDAV_BASE_URL', 'https://localhost/cdav/')
-        self.password = os.getenv('STALWART_ADMIN_PASSWORD', 'admin123')
+        self.base_url = os.getenv('CALDAV_BASE_URL')
+        if not self.base_url:
+            raise ValueError("CALDAV_BASE_URL environment variable is required")
+        
+        self.password = os.getenv('STALWART_ADMIN_PASSWORD')
         
         # Email to channel mapping - routes events to appropriate Hubzilla channels
         # Parse from EMAIL_CHANNEL_MAPPING env var (format: email:channel|email:channel)
-        mapping_str = os.getenv('EMAIL_CHANNEL_MAPPING', 'admin@example.com:admin')
+        mapping_str = os.getenv('EMAIL_CHANNEL_MAPPING')
+        if not mapping_str:
+            raise ValueError("EMAIL_CHANNEL_MAPPING environment variable is required")
         self.email_to_channel = {}
         for pair in mapping_str.split('|'):
             if ':' in pair:
@@ -204,9 +209,9 @@ class EmailProcessor:
         load_dotenv()
         
         # Use existing Stalwart configuration
-        self.host = os.getenv('IMAP_HOST', 'localhost')
-        self.port = int(os.getenv('IMAP_PORT', '143'))
-        self.use_ssl = os.getenv('IMAP_USE_SSL', 'false').lower() == 'true'
+        self.host = os.getenv('IMAP_HOST')
+        self.port = int(os.getenv('IMAP_PORT'))
+        self.use_ssl = os.getenv('IMAP_USE_SSL').lower() == 'true'
         
         # Use existing Stalwart credentials
         self.username = os.getenv('SMTP_USER')
@@ -217,12 +222,12 @@ class EmailProcessor:
         if not self.password:
             raise ValueError("STALWART_ADMIN_PASSWORD environment variable is required")
         
-        self.folder = os.getenv('IMAP_FOLDER', 'INBOX')
-        self.mark_read = os.getenv('IMAP_MARK_READ', 'false').lower() == 'true'
+        self.folder = os.getenv('IMAP_FOLDER')
+        self.mark_read = os.getenv('IMAP_MARK_READ').lower() == 'true'
         
         # Setup logging
-        log_level = os.getenv('LOG_LEVEL', 'DEBUG')
-        debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
+        log_level = os.getenv('LOG_LEVEL')
+        debug_mode = os.getenv('DEBUG').lower() == 'true'
         
         logging.basicConfig(
             level=getattr(logging, log_level),
