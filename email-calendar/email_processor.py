@@ -75,18 +75,17 @@ class HubzillaCalDAVClient:
     """CalDAV client for uploading events to Hubzilla calendars"""
     
     def __init__(self):
-        self.base_url = 'https://localhost/cdav/'
+        self.base_url = os.getenv('CALDAV_BASE_URL', 'https://localhost/cdav/')
         self.password = os.getenv('STALWART_ADMIN_PASSWORD', 'admin123')
         
         # Email to channel mapping - routes events to appropriate Hubzilla channels
-        self.email_to_channel = {
-            'tech@example.com': 'tech',
-            'music@example.com': 'music',
-            'education@example.com': 'education',
-            'volunteer@example.com': 'volunteer',
-            'community@example.com': 'community',
-            'admin@example.com': 'admin'  # fallback
-        }
+        # Parse from EMAIL_CHANNEL_MAPPING env var (format: email:channel|email:channel)
+        mapping_str = os.getenv('EMAIL_CHANNEL_MAPPING', 'admin@example.com:admin')
+        self.email_to_channel = {}
+        for pair in mapping_str.split('|'):
+            if ':' in pair:
+                email, channel = pair.split(':', 1)
+                self.email_to_channel[email.strip()] = channel.strip()
         
         self.logger = logging.getLogger(__name__)
     
@@ -205,9 +204,9 @@ class EmailProcessor:
         load_dotenv()
         
         # Use existing Stalwart configuration
-        self.host = 'localhost'  # Connect from host to container
-        self.port = 143          # IMAP port with STARTTLS
-        self.use_ssl = False     # STARTTLS (starts plain, upgrades to TLS)
+        self.host = os.getenv('IMAP_HOST', 'localhost')
+        self.port = int(os.getenv('IMAP_PORT', '143'))
+        self.use_ssl = os.getenv('IMAP_USE_SSL', 'false').lower() == 'true'
         
         # Use existing Stalwart credentials
         self.username = os.getenv('SMTP_USER')
