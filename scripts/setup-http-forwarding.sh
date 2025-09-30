@@ -8,8 +8,8 @@ setup_http_forwarding() {
 	which socat >/dev/null || apk add --no-cache socat
 
 	# HTTPS forwarding with proper HTTP handling
-	sh -c 'while true; do socat TCP4-LISTEN:443,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:443; done' &
+	sh -c "while true; do socat TCP4-LISTEN:443,bind=127.0.0.1,reuseaddr,fork TCP4:${WEBSERVER_SERVICE_NAME}:443; done" &
 
 	# HTTP forwarding with proper HTTP handling  
-	sh -c 'while true; do socat TCP4-LISTEN:80,bind=127.0.0.1,reuseaddr,fork TCP4:hubzilla_webserver:80; done' &
+	sh -c "while true; do socat TCP4-LISTEN:80,bind=127.0.0.1,reuseaddr,fork TCP4:${WEBSERVER_SERVICE_NAME}:80; done" &
 }
