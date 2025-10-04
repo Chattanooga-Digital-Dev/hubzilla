@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  traefik:
+    container_name: hubzilla_traefik_test
+    image: traefik:v3.0
+    restart: unless-stopped
+    ports:
+      - "8070:80"      # Test web port (avoiding 8080 used by Stalwart)
+      - "8443:443"     # Test HTTPS port (not 443)
+      - "8082:8080"    # Dashboard (avoiding 8081)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    networks:
+      hubzilla_hubzilla:
+        ipv4_address: 172.20.0.12
+
+networks:
+  hubzilla_hubzilla:
+    external: true
