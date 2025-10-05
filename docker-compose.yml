@@ -76,7 +76,7 @@ services:
     container_name: hubzilla_cronjob
     build:
       context: .
-      dockerfile: Dockerfile-with-nginx
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       hub_db:

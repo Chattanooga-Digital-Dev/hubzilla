@@ -27,8 +27,7 @@ RUN apk add bash \
 
 WORKDIR /hubzilla
 
-RUN chmod +x /hubzilla/entrypoint.sh \
- && git checkout tags/$HZ_VERSION \
+RUN git checkout tags/$HZ_VERSION \
  && rm -rf .git \
  && mkdir -p "addon" \
  && mkdir -p "extend" \
