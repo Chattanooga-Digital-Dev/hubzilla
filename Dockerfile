@@ -27,8 +27,6 @@ RUN apk add bash \
 
 WORKDIR /hubzilla
 
-COPY entrypoint.sh /hubzilla
-
 RUN chmod +x /hubzilla/entrypoint.sh \
  && git checkout tags/$HZ_VERSION \
  && rm -rf .git \
@@ -45,8 +43,6 @@ RUN chmod +x /hubzilla/entrypoint.sh \
  && util/update_widget_repo hubzilla-widgets \
  && util/update_addon_repo hzaddons \
  && util/update_addon_repo dm42
-
-COPY config/default.conf.template /hubzilla/config/
 
 FROM php:8.2.22-fpm-alpine3.20
 
@@ -140,18 +136,30 @@ RUN apk --update --no-cache --no-progress add \
  && apk --purge del .build-deps \
  && rm -rf /tmp/* /var/cache/apk/*gz
 
+# Add nginx and supervisor
+RUN apk add --no-cache nginx supervisor
+
 COPY --from=build /hubzilla /var/www/html
 
-# Copy updated entrypoint.sh outside volume-mounted directory
+# Copy nginx and supervisord configurations
+COPY config/nginx-internal.conf /etc/nginx/http.d/default.conf
+COPY config/supervisord.conf /etc/supervisord.conf
+
+# Copy updated entrypoint.sh
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Copy config file outside volume-mounted directory
-RUN mkdir -p /etc/hubzilla
-COPY config/default.conf.template /etc/hubzilla/default.conf.template
+# Create nginx directories
+RUN mkdir -p /run/nginx /var/log/nginx
 
-ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+# Copy existing scripts
+COPY scripts/ /scripts/
+RUN chmod +x /scripts/*.sh
 
-CMD ["php-fpm"]
+EXPOSE 80 443
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
 
 VOLUME /var/www/html

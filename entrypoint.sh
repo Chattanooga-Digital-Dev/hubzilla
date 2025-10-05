@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Source and execute HTTP forwarding setup
-source /scripts/setup-http-forwarding.sh
-setup_http_forwarding
+# Simplified entrypoint for hub container with internal nginx
+# Removed: socat forwarding, nginx config generation, SSL generation (Traefik handles all of this)
 
 ### CHECK FOR, AND SET THE DATABASE ###
 # Skip database initialization if this is the cron container
@@ -13,50 +12,140 @@ if [ "$1" = "crond" ]; then
     exit 0
 fi
 
-# Source and execute database setup script
-source /scripts/setup-database.sh
-setup_database
+# Skip database initialization if running supervisord (main hub container)
+if [ "$1" = "supervisord" ]; then
+    echo "======== HUB CONTAINER: Running with supervisord (nginx + php-fpm) ========"
+    # Continue with database checks below
+fi
+
+CNT=0
+case "${DB_TYPE}" in
+	# WARNING # mysql is still largely untested..
+	[Mm][Yy][Ss][Qq][Ll]|[Mm][Yy][Ss][Qq][Ll][Ii]|[Mm][Aa][Rr][Ii][Aa][Dd][Bb]|0)
+		srv() {	mysql -u "${DB_USER:-hubzilla}" -p "${DB_PASSWORD:-hubzilla}" -h "${DB_HOST:-mariadb}" -P "${DB_PORT:-3306}" "$@"; }
+		db()  { srv -D "${DB_NAME:-hub}" "$@"; }
+		sql() { db -e "$@" ; }
+		while ! srv -e "status" > /dev/null; do
+			echo "Waiting for MariaDB/MySQL to be ready ($((CNT+=1)))"
+			sleep 2
+		done
+		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
+			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
+			FORCE_CONFIG=0
+		else
+			echo "======== DATABASE: schema already exists ========"
+			FORCE_CONFIG=1
+		fi
+		DB_TYPE=0
+	;;
+	[Pp][Ss][Qq][Ll]|[Pp][Gg][Ss][Qq][Ll]|[Pp][Oo][Ss][Tt][Gg][Rr][Ee][Ss]|1)
+		db() { PGPASSWORD="${DB_PASSWORD=hubzilla}" psql -h "${DB_HOST=postgres}" -p "${DB_PORT=5432}" -U "${DB_USER=hubzilla}" -d "${DB_NAME=hub}" -wt "$@"; }
+		sql() {	db -c "$@"; }
+		while ! sql '\q'; do
+			echo "Waiting for Postgres to be ready ($((CNT+=1)))"
+			sleep 2
+		done
+		if ! sql 'SELECT count(*) FROM pconfig;' >/dev/null; then
+			echo "======== SKIPPING: database schema (will be handled by setup wizard) ========"
+			FORCE_CONFIG=0
+		else
+			echo "======== DATABASE: schema already exists ========"
+			FORCE_CONFIG=1
+		fi
+		DB_TYPE=1
+	;;
+	*)
+		echo "======== ERROR: Unknown DB_TYPE=${DB_TYPE=Unknown} ========"
+		echo "======== RESULT: Skipping DB Setup/Check ========"
+		FORCE_CONFIG=0
+	;;
+esac
 
 cd /var/www/html
 
-# Source and execute SMTP setup script
-source /scripts/setup-smtp.sh
-setup_smtp
+cat <<SMTPCONF > /etc/ssmtp/ssmtp.conf
+mailhub=${SMTP_HOST}:${SMTP_PORT}
+UseSTARTTLS=${SMTP_USE_STARTTLS}
+root=${SMTP_USER}@${SMTP_DOMAIN}
+rewriteDomain=${SMTP_DOMAIN}
+FromLineOverride=YES
+SMTPCONF
+if [ "${SMTP_PASS:-'nil'}" != "nil" ]; then
+	cat <<SMTPCONF >> /etc/ssmtp/ssmtp.conf
+AuthUser=${SMTP_USER}
+AuthPass=${SMTP_PASS}
+SMTPCONF
+fi
+echo "root:${SMTP_USER}@${SMTP_DOMAIN}" > /etc/ssmtp/revaliases
+echo "www-data:${SMTP_USER}@${SMTP_DOMAIN}" >> /etc/ssmtp/revaliases
 
-# Source and execute permissions setup script
-source /scripts/setup-permissions.sh
-setup_permissions
+# Arrange permissions for folders
+for folder in addon extend log store view widget; do
+	echo "Fixing folder: $folder"
+	if [ "$folder" = "view" ]; then
+        chmod -R 755 $folder 2>/dev/null || true
+	else
+		chmod 755 $folder 2>/dev/null || true
+    fi
+done
 
-# Source and execute SSL setup script
-source /scripts/setup-ssl.sh
-setup_ssl
+# Make scripts executable
+echo "Setting executable permissions on scripts..."
+for script in /scripts/*.sh; do
+    if [ -f "$script" ]; then
+        chmod +x "$script"
+        echo "Made $(basename $script) executable"
+    fi
+done
 
-# Generate nginx configuration from template
-if [ -f "/etc/hubzilla/default.conf.template" ]; then
-	echo "======== GENERATING: nginx configuration from template ========"
-	mkdir -p /var/nginx-config
-	# Generate config file from template using DOMAIN environment variable
-	envsubst '${DOMAIN}' < /etc/hubzilla/default.conf.template > /var/nginx-config/default.conf
-	chmod 644 /var/nginx-config/default.conf
-	echo "======== SUCCESS: nginx configuration generated for domain: ${DOMAIN} ========"
+chown www-data:www-data . 2>/dev/null || true
+
+# Generate SSL certificates for internal testing
+echo "======== GENERATING: SSL certificates ========"
+if [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; then
+    mkdir -p /var/ssl-shared
+    
+    # Use mounted host mkcert CA if available
+    if [ -f "/mkcert-ca/rootCA.pem" ] && [ -f "/mkcert-ca/rootCA-key.pem" ]; then
+        echo "Using host mkcert CA from /mkcert-ca"
+        # Create mkcert directory and link host CA
+        mkdir -p /root/.local/share/mkcert
+        ln -sf /mkcert-ca/rootCA.pem /root/.local/share/mkcert/rootCA.pem
+        ln -sf /mkcert-ca/rootCA-key.pem /root/.local/share/mkcert/rootCA-key.pem
+    else
+        echo "No host mkcert CA found, creating new container-only CA"
+        echo "WARNING: This CA will only be trusted inside the container"
+        mkcert -install
+    fi
+    
+    # Generate certificates
+    mkcert -cert-file /var/ssl-shared/${DOMAIN}.pem \
+           -key-file /var/ssl-shared/${DOMAIN}-key.pem \
+           ${DOMAIN} 127.0.0.1 ::1
+    
+    chmod 644 /var/ssl-shared/*.pem
+    echo "======== SUCCESS: SSL certificates generated ========"
 else
-	echo "======== ERROR: nginx config template not found at /etc/hubzilla/default.conf.template ========"
-	echo "Available files in /etc/hubzilla/:"
-	ls -la /etc/hubzilla/ || echo "Directory does not exist"
+    echo "======== SSL certificates already exist, skipping generation ========"
 fi
 
-chown www-data:www-data .
+# Install mkcert CA in system trust store
+echo "======== INSTALLING: mkcert CA in system trust store ========"
+if [ -f "/root/.local/share/mkcert/rootCA.pem" ]; then
+    cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
+    update-ca-certificates >/dev/null 2>&1
+    echo "======== SUCCESS: mkcert CA installed in system trust store ========"
+else
+    echo "======== WARNING: mkcert CA not found, SSL validation may fail ========"
+fi
 
 ### START .HTCONFIG.PHP ###
-# Disable automatic .htconfig.php regeneration to preserve existing installations
-# This was causing registration and configuration issues on container restart
-echo "======== SKIPPING: .htconfig.php auto-generation (preserves existing setup) ========"
-FORCE_CONFIG=0
-
 if [ ${FORCE_CONFIG:-0} != 0 ]; then
-	[ -f .htconfig.php ] && rm '.htconfig.php'
-	random_string() {	tr -dc '0-9a-f' </dev/urandom | head -c ${1:-64} ; }
-	cat <<BASE > .htconfig.php
+	if [ -f .htconfig.php ]; then
+		echo "======== SKIPPING: .htconfig.php auto-generation (preserves existing setup) ========"
+	else
+		random_string() {	tr -dc '0-9a-f' </dev/urandom | head -c ${1:-64} ; }
+		cat <<BASE > .htconfig.php
 <?php
 \$db_host = '${DB_HOST}';
 \$db_port = '${DB_PORT}';
@@ -66,9 +155,9 @@ if [ ${FORCE_CONFIG:-0} != 0 ]; then
 \$db_type = '${DB_TYPE}';
 
 // The following configuration maybe configured later in the Admin interface
-// They can also be set by 'util/pconfig'
 App::\$config['system']['timezone'] = '${TIMEZONE}';
 App::\$config['system']['baseurl'] = 'https://${DOMAIN}';
+App::\$config['system']['sitename'] = 'Hubzilla';
 App::\$config['system']['location_hash'] = '$(random_string)';
 App::\$config['system']['transport_security_header'] = 1;
 App::\$config['system']['content_security_policy'] = 1;
@@ -86,132 +175,35 @@ App::\$config['logrot']['logretained'] = '${LOGROT_MAXFILES}';
 // PHP Error Logging Settings
 error_reporting(E_ERROR | E_WARNING | E_PARSE );
 ini_set('error_log','log/php.out');
-//ini_set('log_errors','1');
-//ini_set('display_errors', '0');
 BASE
 
-case "${VERIFY_EMAIL}" in
-	[Yy]|[Yy][Ee][Ss]|[Oo][Nn]|1)
-		util/config system verify_email 1
-	;;
-	*)
-		util/config system verify_email 0
-	;;
-esac
-
-# LOGROT section of .htconfig.php
-case "${ENABLE_LOGROT}" in
-	[Yy]|[Yy][Ee][Ss]|[Oo][Nn]|1)
-		if grep -qE "//App.*logrot" '.htconfig.php'; then
-			LINES=$(grep -nE "//App.*logrot" '.htconfig.php' | cut -d : -f 1)
-			echo "${LINES[*]}"
-			for i in ${LINES[@]}; do
-				sed $i's|//App|App|g' .htconfig.php;
-			done
-		elif grep -qE "App.*logrot" '.htconfig.php'; then
-			:
-		fi
-	;;
-	*)
-		if grep -qE "//App.*logrot" '.htconfig.php'; then
-			:
-		elif grep -qE "App.*logrot" '.htconfig.php'; then
-			LINES=$(grep -nE "//App.*logrot" '.htconfig.php' | cut -d : -f 1)
-			echo "${LINES[*]}"
-			for i in ${LINES[@]}; do
-				sed $i's|App|//App|g' .htconfig.php;
-			done
-		fi
-	;;
-esac
-
-# PHP section of .htconfig.php
-case "${DEBUG_PHP}" in
-	[Yy]|[Yy][Ee][Ss]|[Oo][Nn]|1)
-		if grep -q "//ini_set('log_errors','1')" '.htconfig.php'; then
-			sed "s|//ini_set('log_errors','1');|ini_set('log_errors','1');|g" .htconfig.php
-			sed "s|//ini_set('display_errors','0');|ini_set('display_errors','0');|g" .htconfig.php
-		else
-			:
-		fi
-	;;
-	*)
-		if grep -q "//ini_set('log_errors','1')" '.htconfig.php'; then
-			:
-		else
-			sed "s|ini_set('log_errors','1');|//ini_set('log_errors','1');|g" .htconfig.php
-			sed "s|ini_set('display_errors','0');|//ini_set('display_errors','0');|g" .htconfig.php
-		fi
-	;;
-esac
-
-	if [ ${REDIS_PATH:-"nil"} != "nil" ]; then
-		util/config system session_save_handler redis
-		util/config system session_save_path ${REDIS_PATH}
-		util/config system session_custom true
-	fi
-
-	echo "======== INSTALLING: addons ========"
-	for a in ${ADDON_LIST=logrot nsfw superblock diaspora pubcrawl}; do
-		util/addons install $a
-		case "$a" in
-			diaspora)
-				util/config system diaspora_allowed 1
-			;;
-			xmpp)
-				util/config xmpp bosh_proxy "https://${DOMAIN}/http-bind"
-			;;
-			ldapauth)
-				util/config ldapauth ldap_server ldap://${LDAP_SERVER}
-				util/config ldapauth ldap_binddn ${LDAP_ROOT_DN}
-				util/config ldapauth ldap_bindpw ${LDAP_ADMIN_PASSWORD}
-				util/config ldapauth ldap_searchdn ${LDAP_BASE}
-				util/config ldapauth ldap_userattr uid
-				util/config ldapauth create_account 1
-			;;
-		esac
-	done
-	util/service_class system default_service_class firstclass
-	util/config system ignore_imagick true
-	util/config system register_policy ${REGISTER_POLICY}
-	#util/config system disable_email_validation 1
-
-chown www-data:www-data .htconfig.php
-fi
-### END .HTCONFIG.PHP ###
-
-# Extra configurations needed if Hubzilla version is 4 or below
-CURVER=$(printf "%d" "${HZ_VERSION}")
-MAXVER=$(printf "%d" "5")
-if [ CURVER -lt MAXVER ]; then
-
-	echo "======== RUNNING: udall ========"
-	util/udall
-	echo "======== SUCCESS: udall ========"
-	echo "======== RUNNING: z6convert ========"
-	echo "This may take a while..."
-	php util/z6convert.php
-	R=$?
-	if [ $R -ne 0 ]; then
-		echo "======== FAILED: z6convert ========"
-	else
-		echo "======== SUCCESS: z6convert ========"
+		chown www-data:www-data .htconfig.php
+		
+		echo "======== INSTALLING: addons ========"
+		for a in ${ADDON_LIST=logrot nsfw superblock diaspora pubcrawl}; do
+			util/addons install $a
+			case "$a" in
+				diaspora)
+					util/config system diaspora_allowed 1
+				;;
+			esac
+		done
+		util/service_class system default_service_class firstclass
+		util/config system ignore_imagick true
+		util/config system register_policy ${REGISTER_POLICY}
 	fi
 fi
 
-chown -R www-data:www-data /var/www/html/*
-chown -R www-data:www-data /var/www/html/.*
+chown -R www-data:www-data /var/www/html/* 2>/dev/null || true
+chown -R www-data:www-data /var/www/html/.* 2>/dev/null || true
 
-# Simple installation check - preserve .htconfig.php if it exists
-if [ -f /var/www/html/.htconfig.php ]; then
-	echo "======== EXISTING INSTALLATION: .htconfig.php found, preserving it ========"
-else
+# Check if this is initial setup
+ACCOUNT_COUNT=$(sql 'SELECT count(*) FROM account;' 2>/dev/null | tail -1 | tr -d ' ')
+if [ "${ACCOUNT_COUNT:-0}" = "0" ]; then
 	echo "======== INITIAL SETUP: No .htconfig.php found, setup wizard will show ========"
+else
+	echo "======== EXISTING INSTALLATION: .htconfig.php present ========"
 fi
-
-# Source and execute email monitoring setup
-source /scripts/setup-email-monitoring.sh
-setup_email_monitoring
 
 echo "Starting $@"
 exec "$@"
