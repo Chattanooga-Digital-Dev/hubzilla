@@ -7,8 +7,25 @@ networks:
           gateway: 172.20.0.1
 
 services:
+  traefik:
+    container_name: hubzilla_traefik
+    image: traefik:v3.0
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8082:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    networks:
+      hubzilla:
+        ipv4_address: 172.20.0.10
+
   hub_db:
-    container_name: hubzilla_database       # ARBITARY (user can/should change)
+    container_name: hubzilla_database
     image: postgres:16-alpine
     restart: unless-stopped
     env_file:
@@ -22,86 +39,57 @@ services:
       hubzilla:
         ipv4_address: 172.20.0.30
     volumes:
-        - db_data:/var/lib/postgresql/data
-
-  hub_web:
-    container_name: hubzilla_webserver      # ARBITARY (user can/should change)
-    image: nginx:1.25.3-alpine
-    restart: unless-stopped
-    depends_on:
-      hub:
-        condition: service_healthy
-      hub_cron:
-        condition: service_started
-    env_file:
-      - .env
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - type: volume
-        source: nginx_config
-        target: /etc/nginx/conf.d
-        read_only: true
-      - type: volume
-        source: ssl_certs
-        target: /etc/nginx/ssl
-        read_only: true
-      - type: volume
-        source: web_root
-        target: /var/www/html
-      - type: bind
-        source: ./scripts/start-nginx.sh
-        target: /usr/local/bin/start-nginx.sh
-        read_only: true
-    command: ["/usr/local/bin/start-nginx.sh"]
-    networks:
-      hubzilla:
-        ipv4_address: 172.20.0.10
+      - db_data:/var/lib/postgresql/data
 
   hub:
-    container_name: hubzilla_itself         # ARBITARY (user can/should change)
-    build: .
+    container_name: hubzilla_itself
+    build:
+      context: .
+      dockerfile: Dockerfile-with-nginx
     restart: unless-stopped
     depends_on:
-      - hub_db
+      hub_db:
+        condition: service_healthy
     env_file:
       - .env
     networks:
       hubzilla:
         ipv4_address: 172.20.0.20
     volumes:
-      - type: volume
-        source: web_root
-        target: /var/www/html
-      - type: volume
-        source: ssl_certs
-        target: /var/ssl-shared
-      - type: volume
-        source: nginx_config
-        target: /var/nginx-config
-      - type: bind
-        source: ${MKCERT_PATH}
-        target: /root/.local/share/mkcert
-        read_only: true
+      - web_root:/var/www/html
+      - ssl_certs:/var/ssl-shared
+      - ${MKCERT_PATH}:/mkcert-ca:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hubzilla.rule=Host(`localhost`)"
+      - "traefik.http.routers.hubzilla.entrypoints=websecure"
+      - "traefik.http.routers.hubzilla.tls=true"
+      - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
     healthcheck:
-      test: ["CMD-SHELL", "test -f /var/nginx-config/default.conf || exit 1"]
-      interval: 5s
-      timeout: 3s
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   hub_cron:
-    container_name: hubzilla_cronjob        # ARBITARY (user can/should change)
-    build: .
+    container_name: hubzilla_cronjob
+    build:
+      context: .
+      dockerfile: Dockerfile-with-nginx
     restart: unless-stopped
     depends_on:
-      - hub_db
+      hub_db:
+        condition: service_healthy
+      hub:
+        condition: service_healthy
     env_file:
       - .env
     networks:
       hubzilla:
         ipv4_address: 172.20.0.40
+    volumes:
+      - web_root:/var/www/html
     command: ["crond", "-f"]
 
   stalwart:
@@ -111,32 +99,18 @@ services:
     depends_on:
       - hub
     ports:
-      - "25:25"     # SMTP
-      - "143:143"   # IMAP
-      - "993:993"   # IMAPS
-      - "465:465"   # SMTP over SSL
-      - "587:587"   # SMTP submission
-      - "8080:8080" # Web admin
+      - "25:25"
+      - "143:143"
+      - "993:993"
+      - "465:465"
+      - "587:587"
+      - "8080:8080"
     volumes:
-      - type: volume
-        source: stalwart_data
-        target: /opt/stalwart
-      - type: bind
-        source: ./stalwart-config/config.toml
-        target: /opt/stalwart/etc/config.toml
-        read_only: true
-      - type: volume
-        source: ssl_certs
-        target: /var/ssl-shared
-        read_only: true
-      - type: bind
-        source: ./scripts/setup-stalwart-ssl.sh
-        target: /usr/local/bin/setup-stalwart-ssl.sh
-        read_only: true
-      - type: bind
-        source: ./scripts/stalwart-entrypoint.sh
-        target: /usr/local/bin/stalwart-entrypoint.sh
-        read_only: true
+      - stalwart_data:/opt/stalwart
+      - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro
+      - ssl_certs:/var/ssl-shared:ro
+      - ./scripts/setup-stalwart-ssl.sh:/usr/local/bin/setup-stalwart-ssl.sh:ro
+      - ./scripts/stalwart-entrypoint.sh:/usr/local/bin/stalwart-entrypoint.sh:ro
     entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
     environment:
       - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
@@ -149,6 +123,5 @@ services:
 volumes:
   db_data:
   web_root:
-  ssl_certs:
-  nginx_config:
   stalwart_data:
+  ssl_certs:

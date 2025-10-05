@@ -148,7 +148,7 @@ COPY config/nginx-internal.conf /etc/nginx/http.d/default.conf
 COPY config/supervisord.conf /etc/supervisord.conf
 
 # Copy updated entrypoint.sh
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY entrypoint-internal-nginx.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Create nginx directories
@@ -158,7 +158,7 @@ RUN mkdir -p /run/nginx /var/log/nginx
 COPY scripts/ /scripts/
 RUN chmod +x /scripts/*.sh
 
-EXPOSE 80
+EXPOSE 80 443
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 

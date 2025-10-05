@@ -1,2 +1,9 @@
-# Dynamic TLS configuration will go here
-# This file is a placeholder for future TLS certificate configurations
+tls:
+  certificates:
+    - certFile: /certs/localhost.pem
+      keyFile: /certs/localhost-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/localhost.pem
+        keyFile: /certs/localhost-key.pem

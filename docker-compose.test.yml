@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # New hub container with internal nginx (different name to avoid conflict)
+  hub_new:
+    container_name: hub_new
+    image: hubzilla-nginx-internal:test
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - web_root:/var/www/html  # Shares SAME files as existing hub
+    networks:
+      hubzilla_hubzilla:
+        ipv4_address: 172.20.0.25  # Different IP from existing hub (172.20.0.20)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hubzilla-test.rule=Host(`localhost`)"
+      - "traefik.http.routers.hubzilla-test.entrypoints=websecure"
+      - "traefik.http.routers.hubzilla-test.tls=true"
+      - "traefik.http.services.hubzilla-test.loadbalancer.server.port=80"
+
+networks:
+  hubzilla_hubzilla:
+    external: true
+
+volumes:
+  web_root:
+    external: true
+    name: hubzilla_web_root
