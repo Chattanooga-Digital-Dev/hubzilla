@@ -66,7 +66,7 @@ cd /var/www/html
 cat <<SMTPCONF > /etc/ssmtp/ssmtp.conf
 mailhub=${SMTP_HOST}:${SMTP_PORT}
 UseSTARTTLS=${SMTP_USE_STARTTLS}
-root=${SMTP_USER}@${SMTP_DOMAIN}
+root=${SMTP_USER}
 rewriteDomain=${SMTP_DOMAIN}
 FromLineOverride=YES
 SMTPCONF
@@ -76,8 +76,8 @@ AuthUser=${SMTP_USER}
 AuthPass=${SMTP_PASS}
 SMTPCONF
 fi
-echo "root:${SMTP_USER}@${SMTP_DOMAIN}" > /etc/ssmtp/revaliases
-echo "www-data:${SMTP_USER}@${SMTP_DOMAIN}" >> /etc/ssmtp/revaliases
+echo "root:${SMTP_USER}" > /etc/ssmtp/revaliases
+echo "www-data:${SMTP_USER}" >> /etc/ssmtp/revaliases
 
 # Arrange permissions for folders
 for folder in addon extend log store view widget; do
@@ -204,6 +204,10 @@ if [ "${ACCOUNT_COUNT:-0}" = "0" ]; then
 else
 	echo "======== EXISTING INSTALLATION: .htconfig.php present ========"
 fi
+
+# Source and execute email monitoring setup
+source /scripts/setup-email-monitoring.sh
+setup_email_monitoring
 
 echo "Starting $@"
 exec "$@"
