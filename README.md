@@ -99,13 +99,13 @@ Your Hubzilla instance: **https://localhost**
 
 ## Container Overview
 
-| Service | Purpose | Port |
-|---------|---------|------|
-| `hub` | Hubzilla PHP application | - |
-| `hub_web` | Nginx reverse proxy | 443 |
+| Service | Purpose | Ports |
+|---------|---------|-------|
+| `traefik` | HTTPS reverse proxy | 80, 443, 8082 |
+| `hub` | Hubzilla (nginx + PHP-FPM) | - |
 | `hub_db` | PostgreSQL database | 5432 |
 | `hub_cron` | Background tasks | - |
-| `stalwart` | Local mail server | 8080 |
+| `stalwart` | Local mail server | 25, 143, 587, 8080 |
 
 ## Development Commands
 

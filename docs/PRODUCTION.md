@@ -5,8 +5,9 @@
 ## Suggested Changes for Production
 
 ### SSL Certificates
-- Replace mkcert with real SSL certificates (Let's Encrypt, commercial CA)
-- Update nginx configuration for production certificates
+- Replace mkcert with Let's Encrypt certificates
+- Configure Traefik's certificate resolver for automatic Let's Encrypt renewal
+- See [Traefik Let's Encrypt documentation](https://doc.traefik.io/traefik/https/acme/)
 
 ### Security
 ```bash

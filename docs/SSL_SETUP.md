@@ -31,6 +31,8 @@ MKCERT_PATH=~/Library/Application Support/mkcert     # macOS
 MKCERT_PATH=/mnt/c/Users/USERNAME/AppData/Local/mkcert  # Windows WSL2
 ```
 
+**Note:** These certificates are used by both Traefik (for external HTTPS) and the hub container (for internal testing).
+
 ## Troubleshooting
 - **Firefox on Linux:** `sudo apt install libnss3-tools && mkcert -install`
 - **SSL errors:** Check MKCERT_PATH in .env matches `mkcert -CAROOT` output

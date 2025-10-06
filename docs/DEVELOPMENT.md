@@ -62,8 +62,8 @@ curl -k -I https://localhost
 
 | Service Name (Container Name) | IP | Purpose |
 |-----------|----|----|
-| hub_web (hubzilla_webserver) | 172.20.0.10 | Nginx proxy |
-| hub (hubzilla_itself) | 172.20.0.20 | PHP-FPM app |
+| traefik (hubzilla_traefik) | 172.20.0.10 | Traefik reverse proxy |
+| hub (hubzilla_itself) | 172.20.0.20 | Hubzilla (nginx + PHP-FPM) |
 | hub_db (hubzilla_database) | 172.20.0.30 | PostgreSQL |
 | hub_cron (hubzilla_cronjob) | 172.20.0.40 | Background tasks |
 | stalwart (hubzilla_mailserver) | 172.20.0.50 | Stalwart mail |
