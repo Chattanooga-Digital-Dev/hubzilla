@@ -49,9 +49,11 @@ services:
 
   hub:
     container_name: hubzilla_itself
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: catmanmatt/hubzilla-pg-nginx:v3
+    # Uncomment to build locally instead of pulling from Docker Hub:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       hub_db:
@@ -80,9 +82,11 @@ services:
 
   hub_cron:
     container_name: hubzilla_cronjob
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: catmanmatt/hubzilla-pg-nginx:v3
+    # Uncomment to build locally instead of pulling from Docker Hub:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       hub_db:
