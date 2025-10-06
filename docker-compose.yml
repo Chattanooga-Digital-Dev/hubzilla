@@ -11,6 +11,10 @@ services:
     container_name: hubzilla_traefik
     image: traefik:v3.0
     restart: unless-stopped
+    entrypoint: ["/custom-entrypoint.sh"]
+    command: ["traefik"]
+    environment:
+      - DOMAIN=${DOMAIN}
     ports:
       - "80:80"
       - "443:443"
@@ -19,7 +23,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic:/etc/traefik/dynamic:ro
-      - ./certs:/certs:ro
+      - traefik_certs:/certs
+      - ./traefik/entrypoint.sh:/custom-entrypoint.sh:ro
+      - ${MKCERT_PATH}:/mkcert-ca:ro
     networks:
       hubzilla:
         ipv4_address: 172.20.0.10
@@ -125,3 +131,4 @@ volumes:
   web_root:
   stalwart_data:
   ssl_certs:
+  traefik_certs:
