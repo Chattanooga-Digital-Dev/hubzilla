@@ -155,7 +155,7 @@ docker logs hubzilla_database
 **Reset everything:**
 ```bash
 docker compose down
-docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_nginx_config
+docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_stalwart_data hubzilla_traefik_certs
 docker compose up -d
 ```
 
