@@ -121,14 +121,15 @@ else
     echo "======== WARNING: SSL certificates not found, some features may not work ========"
 fi
 
-# Install mkcert CA in system trust store
+# Install mkcert CA in system trust store for SSL validation
 echo "======== INSTALLING: mkcert CA in system trust store ========"
-if [ -f "/root/.local/share/mkcert/rootCA.pem" ]; then
-    cp /root/.local/share/mkcert/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
+if [ -f "/mkcert-ca/rootCA.pem" ]; then
+    cp /mkcert-ca/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
     update-ca-certificates >/dev/null 2>&1
     echo "======== SUCCESS: mkcert CA installed in system trust store ========"
 else
-    echo "======== WARNING: mkcert CA not found, SSL validation may fail ========"
+    echo "======== WARNING: mkcert CA not found at /mkcert-ca/rootCA.pem ========"
+    echo "SSL validation will fail. Set MKCERT_PATH in .env correctly."
 fi
 
 ### START .HTCONFIG.PHP ###

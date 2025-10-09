@@ -49,7 +49,7 @@ services:
 
   hub:
     container_name: hubzilla_itself
-    image: catmanmatt/hubzilla-pg-nginx:v3
+    image: catmanmatt/hubzilla-pg-nginx:v4
     # Uncomment to build locally instead of pulling from Docker Hub:
     # build:
     #   context: .
@@ -84,7 +84,7 @@ services:
 
   hub_cron:
     container_name: hubzilla_cronjob
-    image: catmanmatt/hubzilla-pg-nginx:v3
+    image: catmanmatt/hubzilla-pg-nginx:v4
     # Uncomment to build locally instead of pulling from Docker Hub:
     # build:
     #   context: .
