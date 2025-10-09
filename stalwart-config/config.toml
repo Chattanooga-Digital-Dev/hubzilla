@@ -51,6 +51,21 @@ store = "rocksdb"
 user = "admin"
 secret = "%{env:STALWART_ADMIN_PASSWORD}%"
 
+# SMTP/IMAP Authentication - Enforces TLS
+# Only allows authentication over encrypted connections
+# Requires authentication for submission (587) and IMAP (143) ports
+[session.auth]
+mechanisms = [ { if = "local_port != 25 && is_tls", then = "[plain, login]"},
+               { else = false } ]
+directory = "'internal'"
+require = [ { if = "local_port == 587 || local_port == 143", then = true },
+            { else = false } ]
+must-match-sender = true
+
+[session.auth.errors]
+total = 3
+wait = "5s"
+
 # Logging
 [tracer."stdout"]
 type = "stdout"
