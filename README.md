@@ -87,7 +87,8 @@ docker logs -f hubzilla_itself
 4. **Complete remaining steps** in the wizard
 
 ### 5. Access Your Site
-Your Hubzilla instance: **https://localhost**
+Your Hubzilla instance: **https://localhost**  
+Stalwart mail admin: **https://mail.localhost**
 
 ## Screenshots
 
@@ -105,7 +106,7 @@ Your Hubzilla instance: **https://localhost**
 | `hub` | Hubzilla (nginx + PHP-FPM) | - |
 | `hub_db` | PostgreSQL database | 5432 |
 | `hub_cron` | Background tasks | - |
-| `stalwart` | Local mail server | 25, 143, 587, 8080 |
+| `stalwart` | Local mail server | 25, 143, 587, 993, 465 |
 
 ## Development Commands
 

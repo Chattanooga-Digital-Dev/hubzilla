@@ -2,8 +2,10 @@
 
 ## Stalwart Mail Server Setup
 
+**Security Note:** Stalwart is configured to enforce TLS encryption. Ports 587 (SMTP submission) and 143 (IMAP) require STARTTLS before authentication. Ports 465 and 993 use implicit TLS.
+
 ### Access Admin Interface
-- URL: https://localhost:8080
+- URL: https://mail.localhost
 - Login: `admin` / password from `.env` (`STALWART_ADMIN_PASSWORD`)
 
 [<img src="screenshots/Stalwart.png" width="500" alt="Stalwart Mail Server Web Interface"/>](screenshots/Stalwart.png)
