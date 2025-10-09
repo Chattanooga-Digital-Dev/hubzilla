@@ -27,10 +27,10 @@ if [ ! -f "/certs/${DOMAIN}.pem" ] || [ ! -f "/certs/${DOMAIN}-key.pem" ]; then
         mkcert -install
     fi
     
-    # Generate certificates
+    # Generate certificates for both localhost and mail.localhost
     mkcert -cert-file /certs/${DOMAIN}.pem \
            -key-file /certs/${DOMAIN}-key.pem \
-           ${DOMAIN} 127.0.0.1 ::1
+           ${DOMAIN} mail.${DOMAIN} 127.0.0.1 ::1
     
     chmod 644 /certs/*.pem
     echo "Certificates generated successfully"

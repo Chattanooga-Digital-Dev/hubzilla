@@ -56,6 +56,8 @@ services:
     #   dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
+      traefik:
+        condition: service_started
       hub_db:
         condition: service_healthy
     env_file:
@@ -65,7 +67,7 @@ services:
         ipv4_address: 172.20.0.20
     volumes:
       - web_root:/var/www/html
-      - ssl_certs:/var/ssl-shared
+      - traefik_certs:/var/ssl-shared:ro
       - ${MKCERT_PATH}:/mkcert-ca:ro
     labels:
       - "traefik.enable=true"
@@ -114,11 +116,17 @@ services:
       - "993:993"
       - "465:465"
       - "587:587"
-      - "8080:8080"
+      # Port 8080 now proxied through Traefik instead of direct exposure
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stalwart.rule=Host(`mail.localhost`)"
+      - "traefik.http.routers.stalwart.entrypoints=websecure"
+      - "traefik.http.routers.stalwart.tls=true"
+      - "traefik.http.services.stalwart.loadbalancer.server.port=8080"
     volumes:
       - stalwart_data:/opt/stalwart
       - ./stalwart-config/config.toml:/opt/stalwart/etc/config.toml:ro
-      - ssl_certs:/var/ssl-shared:ro
+      - traefik_certs:/var/ssl-shared:ro
       - ./scripts/setup-stalwart-ssl.sh:/usr/local/bin/setup-stalwart-ssl.sh:ro
       - ./scripts/stalwart-entrypoint.sh:/usr/local/bin/stalwart-entrypoint.sh:ro
     entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
@@ -134,5 +142,4 @@ volumes:
   db_data:
   web_root:
   stalwart_data:
-  ssl_certs:
   traefik_certs:

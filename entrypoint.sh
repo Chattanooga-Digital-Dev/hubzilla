@@ -100,33 +100,25 @@ done
 
 chown www-data:www-data . 2>/dev/null || true
 
-# Generate SSL certificates for internal testing
-echo "======== GENERATING: SSL certificates ========"
-if [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; then
-    mkdir -p /var/ssl-shared
-    
-    # Use mounted host mkcert CA if available
-    if [ -f "/mkcert-ca/rootCA.pem" ] && [ -f "/mkcert-ca/rootCA-key.pem" ]; then
-        echo "Using host mkcert CA from /mkcert-ca"
-        # Create mkcert directory and link host CA
-        mkdir -p /root/.local/share/mkcert
-        ln -sf /mkcert-ca/rootCA.pem /root/.local/share/mkcert/rootCA.pem
-        ln -sf /mkcert-ca/rootCA-key.pem /root/.local/share/mkcert/rootCA-key.pem
-    else
-        echo "No host mkcert CA found, creating new container-only CA"
-        echo "WARNING: This CA will only be trusted inside the container"
-        mkcert -install
+# Wait for Traefik to generate SSL certificates
+echo "======== WAITING: for Traefik to generate SSL certificates ========"
+mkdir -p /var/ssl-shared
+COUNT=0
+while [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; do
+    if [ $COUNT -ge 30 ]; then
+        echo "======== ERROR: SSL certificates not found after 30 seconds ========"
+        echo "Make sure Traefik container has started and generated certificates"
+        break
     fi
-    
-    # Generate certificates
-    mkcert -cert-file /var/ssl-shared/${DOMAIN}.pem \
-           -key-file /var/ssl-shared/${DOMAIN}-key.pem \
-           ${DOMAIN} 127.0.0.1 ::1
-    
-    chmod 644 /var/ssl-shared/*.pem
-    echo "======== SUCCESS: SSL certificates generated ========"
+    echo "Waiting for Traefik SSL certificates... ($COUNT/30)"
+    sleep 1
+    COUNT=$((COUNT + 1))
+done
+
+if [ -f "/var/ssl-shared/${DOMAIN}.pem" ] && [ -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; then
+    echo "======== SUCCESS: SSL certificates found ========"
 else
-    echo "======== SSL certificates already exist, skipping generation ========"
+    echo "======== WARNING: SSL certificates not found, some features may not work ========"
 fi
 
 # Install mkcert CA in system trust store
