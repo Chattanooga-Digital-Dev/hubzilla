@@ -1,6 +1,7 @@
 # Environment and secrets
 .env
 *.env
+.env.staging
 
 # Docker-related files
 docker-compose.override.yml
