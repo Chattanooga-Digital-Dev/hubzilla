@@ -1,0 +1,157 @@
+version: '3.8'
+
+networks:
+  apps_net:
+    external: true
+  hubzilla_internal:
+    driver: overlay
+    attachable: true
+
+services:
+  hub_db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hubzilla_internal
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  hub:
+    image: catmanmatt/hubzilla-pg-nginx:v4
+    environment:
+      - DOMAIN=${DOMAIN}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - TIMEZONE=${TIMEZONE}
+      - REQUIRE_EMAIL=${REQUIRE_EMAIL}
+      - REGISTER_POLICY=${REGISTER_POLICY}
+      - ADDON_LIST=${ADDON_LIST}
+      - DB_HOST=hub_db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_TYPE=${DB_TYPE}
+      - DB_PORT=${DB_PORT}
+      - SMTP_HOST=stalwart
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_DOMAIN=${SMTP_DOMAIN}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_USE_STARTTLS=${SMTP_USE_STARTTLS}
+      - ENABLE_LOGROT=${ENABLE_LOGROT}
+      - LOGROT_PATH=${LOGROT_PATH}
+      - LOGROT_SIZE=${LOGROT_SIZE}
+      - LOGROT_MAXFILES=${LOGROT_MAXFILES}
+      - DEBUG_PHP=${DEBUG_PHP}
+    networks:
+      - apps_net
+      - hubzilla_internal
+    volumes:
+      - web_root:/var/www/html
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.hubzilla.rule=Host(`${DOMAIN}`)"
+        - "traefik.http.routers.hubzilla.entrypoints=websecure"
+        - "traefik.http.routers.hubzilla.tls=true"
+        - "traefik.http.routers.hubzilla.tls.certresolver=le"
+        - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
+        - "traefik.docker.network=apps_net"
+      restart_policy:
+        condition: on-failure
+
+  hub_cron:
+    image: catmanmatt/hubzilla-pg-nginx:v4
+    environment:
+      - DOMAIN=${DOMAIN}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - TIMEZONE=${TIMEZONE}
+      - DB_HOST=hub_db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_TYPE=${DB_TYPE}
+      - DB_PORT=${DB_PORT}
+    networks:
+      - hubzilla_internal
+    volumes:
+      - web_root:/var/www/html
+    command: ["crond", "-f"]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  stalwart:
+    image: stalwartlabs/stalwart:latest
+    ports:
+      - target: 25
+        published: 25
+        protocol: tcp
+        mode: host
+      - target: 143
+        published: 143
+        protocol: tcp
+        mode: host
+      - target: 993
+        published: 993
+        protocol: tcp
+        mode: host
+      - target: 465
+        published: 465
+        protocol: tcp
+        mode: host
+      - target: 587
+        published: 587
+        protocol: tcp
+        mode: host
+    environment:
+      - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
+      - STALWART_ADMIN_PASSWORD=${STALWART_ADMIN_PASSWORD}
+      - DOMAIN=${DOMAIN}
+    networks:
+      - apps_net
+      - hubzilla_internal
+    volumes:
+      - stalwart_data:/opt/stalwart
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.stalwart.rule=Host(`mail.${DOMAIN}`)"
+        - "traefik.http.routers.stalwart.entrypoints=websecure"
+        - "traefik.http.routers.stalwart.tls=true"
+        - "traefik.http.routers.stalwart.tls.certresolver=le"
+        - "traefik.http.services.stalwart.loadbalancer.server.port=8080"
+        - "traefik.docker.network=apps_net"
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  db_data:
+  web_root:
+  stalwart_data:
