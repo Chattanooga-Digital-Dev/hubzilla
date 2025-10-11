@@ -37,16 +37,11 @@ services:
   hub_db:
     image: postgres:16-alpine
     environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_DB=${DB_NAME}
     secrets:
       - db_password
-    # Use secret as environment variable
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        export POSTGRES_PASSWORD=$$(cat /run/secrets/db_password)
-        exec docker-entrypoint.sh postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
