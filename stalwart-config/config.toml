@@ -1,5 +1,6 @@
-# Stalwart Mail Server Configuration for Staging/Production
-# Uses Let's Encrypt certificates extracted from Traefik
+# Stalwart Mail Server Configuration
+# Compatible with both local development (mkcert) and staging/production (Let's Encrypt)
+# Uses MAIL_DOMAIN environment variable for certificate paths
 
 [server.listener."smtp"]
 bind = ["[::]:25"]
@@ -71,7 +72,7 @@ ansi = false
 enable = true
 
 # TLS Certificate Configuration
-# Uses certificates extracted from Traefik for mail subdomain
+# Note: MAIL_DOMAIN must be set in .env (e.g., mail.localhost or mail.staging.chatthub.online)
 [certificate."default"]
 cert = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%.pem}%"
 private-key = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%-key.pem}%"

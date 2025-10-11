@@ -100,36 +100,36 @@ done
 
 chown www-data:www-data . 2>/dev/null || true
 
-# Wait for Traefik to generate SSL certificates
-echo "======== WAITING: for Traefik to generate SSL certificates ========"
-mkdir -p /var/ssl-shared
-COUNT=0
-while [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; do
-    if [ $COUNT -ge 30 ]; then
-        echo "======== ERROR: SSL certificates not found after 30 seconds ========"
-        echo "Make sure Traefik container has started and generated certificates"
-        break
+# SSL Certificate and CA setup - only for local development with mkcert
+# In staging/production, Traefik handles SSL with Let's Encrypt
+if [ -d "/mkcert-ca" ] && [ -f "/mkcert-ca/rootCA.pem" ]; then
+    echo "======== LOCAL DEVELOPMENT MODE: Setting up mkcert SSL ========"
+    
+    # Wait for Traefik to generate mkcert certificates
+    echo "Waiting for Traefik to generate SSL certificates..."
+    mkdir -p /var/ssl-shared
+    COUNT=0
+    while [ ! -f "/var/ssl-shared/${DOMAIN}.pem" ] || [ ! -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; do
+        if [ $COUNT -ge 30 ]; then
+            echo "WARNING: SSL certificates not found after 30 seconds"
+            break
+        fi
+        sleep 1
+        COUNT=$((COUNT + 1))
+    done
+    
+    if [ -f "/var/ssl-shared/${DOMAIN}.pem" ]; then
+        echo "SUCCESS: SSL certificates found"
     fi
-    echo "Waiting for Traefik SSL certificates... ($COUNT/30)"
-    sleep 1
-    COUNT=$((COUNT + 1))
-done
-
-if [ -f "/var/ssl-shared/${DOMAIN}.pem" ] && [ -f "/var/ssl-shared/${DOMAIN}-key.pem" ]; then
-    echo "======== SUCCESS: SSL certificates found ========"
-else
-    echo "======== WARNING: SSL certificates not found, some features may not work ========"
-fi
-
-# Install mkcert CA in system trust store for SSL validation
-echo "======== INSTALLING: mkcert CA in system trust store ========"
-if [ -f "/mkcert-ca/rootCA.pem" ]; then
+    
+    # Install mkcert CA in system trust store
+    echo "Installing mkcert CA in system trust store..."
     cp /mkcert-ca/rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt
     update-ca-certificates >/dev/null 2>&1
-    echo "======== SUCCESS: mkcert CA installed in system trust store ========"
+    echo "SUCCESS: mkcert CA installed"
 else
-    echo "======== WARNING: mkcert CA not found at /mkcert-ca/rootCA.pem ========"
-    echo "SSL validation will fail. Set MKCERT_PATH in .env correctly."
+    echo "======== STAGING/PRODUCTION MODE: Using Let's Encrypt via Traefik ========"
+    echo "Skipping mkcert setup - Traefik handles SSL with Let's Encrypt"
 fi
 
 ### START .HTCONFIG.PHP ###

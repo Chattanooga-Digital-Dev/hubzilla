@@ -59,6 +59,9 @@ services:
 
   hub:
     image: catmanmatt/hubzilla-pg-nginx:v4
+    configs:
+      - source: nginx_production_config
+        target: /etc/nginx/http.d/default.conf
     environment:
       - DOMAIN=${DOMAIN}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
@@ -187,6 +190,8 @@ services:
         condition: on-failure
 
 configs:
+  nginx_production_config:
+    file: ./config/nginx-internal-production.conf
   stalwart_config:
     file: ./stalwart-config/config.toml
   stalwart_entrypoint:

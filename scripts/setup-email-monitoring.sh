@@ -17,10 +17,10 @@ setup_email_monitoring() {
 					break
 				else
 					echo "======== DETECTED: Hubzilla setup completed, applying email config ========"
-					util/config system admin_email admin@example.com
-					util/config system sender_email admin@example.com
-					util/config system from_email admin@example.com
-					util/config system reply_address admin@example.com
+					util/config system admin_email "${ADMIN_EMAIL}"
+					util/config system sender_email "${ADMIN_EMAIL}"
+					util/config system from_email "${ADMIN_EMAIL}"
+					util/config system reply_address "${ADMIN_EMAIL}"
 					echo "======== SUCCESS: Email configuration applied automatically (one-time only) ========"
 					break
 				fi
