@@ -65,7 +65,7 @@ services:
         condition: on-failure
 
   hub:
-    image: catmanmatt/hubzilla-pg-nginx:v4
+    image: catmanmatt/hubzilla-pg-nginx:v5
     configs:
       - source: nginx_production_config
         target: /etc/nginx/http.d/default.conf
@@ -127,7 +127,7 @@ services:
         condition: on-failure
 
   hub_cron:
-    image: catmanmatt/hubzilla-pg-nginx:v4
+    image: catmanmatt/hubzilla-pg-nginx:v5
     configs:
       - source: secrets_loader
         target: /usr/local/bin/load-secrets.sh
