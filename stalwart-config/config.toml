@@ -1,5 +1,5 @@
-# Minimal Stalwart Mail Server Configuration for Local Development
-# Based on official documentation minimal configuration example
+# Stalwart Mail Server Configuration for Staging/Production
+# Uses Let's Encrypt certificates extracted from Traefik
 
 [server.listener."smtp"]
 bind = ["[::]:25"]
@@ -27,7 +27,7 @@ tls.implicit = true
 bind = ["[::]:8080"]
 protocol = "http"
 
-# Storage configuration (required)
+# Storage configuration
 [storage]
 data = "rocksdb"
 fts = "rocksdb"
@@ -45,15 +45,12 @@ compression = "lz4"
 type = "internal"
 store = "rocksdb"
 
-# Add local test accounts through admin interface or API
-# For now, we'll use fallback admin to configure accounts
+# Admin authentication
 [authentication.fallback-admin]
 user = "admin"
 secret = "%{env:STALWART_ADMIN_PASSWORD}%"
 
 # SMTP/IMAP Authentication - Enforces TLS
-# Only allows authentication over encrypted connections
-# Requires authentication for submission (587) and IMAP (143) ports
 [session.auth]
 mechanisms = [ { if = "local_port != 25 && is_tls", then = "[plain, login]"},
                { else = false } ]
@@ -73,8 +70,9 @@ level = "info"
 ansi = false
 enable = true
 
-# TLS Certificate Configuration - uses DOMAIN for SSL certificates
+# TLS Certificate Configuration
+# Uses certificates extracted from Traefik for mail subdomain
 [certificate."default"]
-cert = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%.pem}%"
-private-key = "%{file:/opt/stalwart/etc/ssl/%{env:DOMAIN}%-key.pem}%"
+cert = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%.pem}%"
+private-key = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%-key.pem}%"
 default = true

@@ -8,6 +8,32 @@ networks:
     attachable: true
 
 services:
+  # Certificate extractor - pulls certs from Traefik for Stalwart
+  cert_extractor:
+    image: ldez/traefik-certs-dumper:v2.8.3
+    entrypoint: sh -c '
+      apk add jq;
+      while ! [ -e /data/acme.json ] ||
+            ! [ -s /data/acme.json ]; do
+        sleep 1;
+      done;
+      traefik-certs-dumper file --version v2 --watch
+        --source /data/acme.json --dest /certs'
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - traefik_data:/data:ro
+      - mail_certs:/certs
+    networks:
+      - hubzilla_internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
   hub_db:
     image: postgres:16-alpine
     environment:
@@ -130,11 +156,20 @@ services:
       - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
       - STALWART_ADMIN_PASSWORD=${STALWART_ADMIN_PASSWORD}
       - DOMAIN=${DOMAIN}
+      - MAIL_DOMAIN=mail.${DOMAIN}
+    configs:
+      - source: stalwart_config
+        target: /opt/stalwart/etc/config.toml
+      - source: stalwart_entrypoint
+        target: /usr/local/bin/stalwart-entrypoint.sh
+        mode: 0755
     networks:
       - apps_net
       - hubzilla_internal
     volumes:
       - stalwart_data:/opt/stalwart
+      - mail_certs:/certs:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/stalwart-entrypoint.sh"]
     deploy:
       replicas: 1
       labels:
@@ -151,7 +186,17 @@ services:
       restart_policy:
         condition: on-failure
 
+configs:
+  stalwart_config:
+    file: ./stalwart-config/config.toml
+  stalwart_entrypoint:
+    file: ./scripts/stalwart-entrypoint.sh
+
 volumes:
   db_data:
   web_root:
   stalwart_data:
+  mail_certs:
+  traefik_data:
+    external: true
+    name: traefik_traefik_data
