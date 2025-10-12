@@ -25,7 +25,8 @@ services:
       traefik-certs-dumper file --version v2 --watch
         --source /data/acme.json --dest /certs --domain-certs "${MAIL_DOMAIN}"'
     environment:
-      - MAIL_DOMAIN=${MAIL_DOMAIN}
+      - DOMAIN=${DOMAIN}
+      - MAIL_DOMAIN=mail.${DOMAIN}
     volumes:
       - traefik_data:/data:ro
       - mail_certs:/certs
