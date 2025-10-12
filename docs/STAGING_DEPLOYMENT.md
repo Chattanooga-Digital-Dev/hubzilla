@@ -299,6 +299,8 @@ When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`),
    ```bash
    psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
    ```
+### Via SSH on the server
+docker exec $(docker ps -q -f name=hub_db) psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
 
 5. **Example Output:**
    ```
