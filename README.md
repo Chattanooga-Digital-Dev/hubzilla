@@ -1,18 +1,30 @@
-# Hubzilla Local Development
+# Hubzilla Docker Deployment
 
-A fully containerized Hubzilla setup for local development with HTTPS support.
+A fully containerized Hubzilla setup supporting both local development and production deployment to Docker Swarm.
 
 ## Features
 
-- **HTTPS with valid certificates** - Uses mkcert for browser-trusted localhost certificates
+- **HTTPS with valid certificates** - Local: mkcert, Staging/Production: Let's Encrypt via Traefik
 - **PostgreSQL database** - Persistent data storage
-- **localhost domain** - Should work locally on any machine without DNS configuration
+- **Multiple deployment modes** - Local development or Docker Swarm/Portainer deployment
+- **Integrated mail server** - Stalwart for SMTP/IMAP
+
+## Deployment Environments
+
+This repository supports multiple deployment scenarios:
+
+- **Local Development** - Full stack with HTTPS using `docker-compose.yml` for local experimentation
+- **Staging/Production** - Docker Swarm deployment via Portainer using `docker-stack.yml`
+
+**For local development:** Continue with the Quick Start below.
+
+**For staging/production deployment:** See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md)
 
 ## Disclaimer
 
-This project was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development, may contain bugs, and is intended for local development and testing only. **Not for production use.**
+This project was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development and may contain bugs.
 
-## Quick Start
+## Quick Start (Local Development)
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -108,6 +120,8 @@ Stalwart mail admin: **https://mail.localhost**
 | `hub_cron` | Background tasks | - |
 | `stalwart` | Local mail server | 25, 143, 587, 993, 465 |
 
+**Note:** This table describes the local development setup. Staging/production deployments use a different network architecture with external Traefik and Docker Swarm overlay networks. See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) for details.
+
 ## Development Commands
 
 ```bash
@@ -162,15 +176,26 @@ docker compose up -d
 
 ## Documentation
 
+- [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) - Deploy to Docker Swarm/Portainer
 - [SSL Setup Details](docs/SSL_SETUP.md) - Complete mkcert configuration
 - [Email Configuration](docs/EMAIL_CONFIG.md) - Stalwart mail server setup
 - [Environment Variables](docs/ENVIRONMENT.md) - Complete .env reference
 - [Development Guide](docs/DEVELOPMENT.md) - Advanced commands and debugging
 - [Email-to-Calendar](docs/EMAIL_CALENDAR.md) - Calendar processing features
 
-## Production Warning
+## Deployment Options
 
-This setup is for local development only. For production deployment suggestions, see [docs/PRODUCTION.md](docs/PRODUCTION.md).
+**Local Development:**
+This setup uses `docker-compose.yml` and is designed for local testing and development.
+
+**Staging/Production:**
+For deployment to Docker Swarm environments via Portainer, see the [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md). This includes:
+- Portainer-based deployment workflow
+- Docker Swarm stack configuration
+- Let's Encrypt SSL via Traefik
+- Two-network architecture (external Traefik + internal services)
+- Docker Secrets management
+- Troubleshooting and verification steps
 
 ## Contributing
 
