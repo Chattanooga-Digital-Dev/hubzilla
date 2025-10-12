@@ -1,8 +1,6 @@
 version: '3.8'
 
 networks:
-  apps_net:
-    external: true
   traefik_net:
     external: true
   hubzilla_internal:
@@ -101,7 +99,6 @@ services:
         exec /usr/local/bin/entrypoint.sh supervisord -c /etc/supervisord.conf
     networks:
       - traefik_net
-      - apps_net
       - hubzilla_internal
     volumes:
       - web_root:/var/www/html
@@ -120,7 +117,7 @@ services:
         - "traefik.http.routers.hubzilla.tls=true"
         - "traefik.http.routers.hubzilla.tls.certresolver=le"
         - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
-        - "traefik.swarm.network=apps_net"
+        - "traefik.swarm.network=traefik_net"
       restart_policy:
         condition: on-failure
 
