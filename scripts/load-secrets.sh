@@ -22,8 +22,8 @@ if [ -f /run/secrets/stalwart_admin_password ]; then
     export STALWART_ADMIN_PASSWORD=$(cat /run/secrets/stalwart_admin_password)
 fi
 
-# Verify critical secrets are loaded
-if [ -z "$DB_PASSWORD" ]; then
+# Verify critical secrets are loaded (only for services that need DB)
+if [ ! -z "$DB_USER" ] && [ -z "$DB_PASSWORD" ]; then
     echo "ERROR: DB_PASSWORD secret not found"
     exit 1
 fi

@@ -8,32 +8,6 @@ networks:
     attachable: true
 
 services:
-  # Certificate extractor - pulls certs from Traefik for Stalwart
-  cert_extractor:
-    image: ldez/traefik-certs-dumper:v2.8.3
-    entrypoint: sh -c '
-      apk add jq;
-      while ! [ -e /data/acme.json ] ||
-            ! [ -s /data/acme.json ]; do
-        sleep 1;
-      done;
-      traefik-certs-dumper file --version v2 --watch
-        --source /data/acme.json --dest /certs'
-    environment:
-      - DOMAIN=${DOMAIN}
-    volumes:
-      - traefik_data:/data:ro
-      - mail_certs:/certs
-    networks:
-      - hubzilla_internal
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: on-failure
-
   hub_db:
     image: postgres:16-alpine
     environment:
@@ -79,7 +53,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_TYPE=${DB_TYPE}
       - DB_PORT=${DB_PORT}
-      - SMTP_HOST=stalwart
+      - SMTP_HOST=mail_stalwart
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_DOMAIN=${SMTP_DOMAIN}
       - SMTP_USER=${SMTP_USER}
@@ -152,71 +126,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  stalwart:
-    image: stalwartlabs/stalwart:latest
-    ports:
-      - target: 25
-        published: 25
-        protocol: tcp
-        mode: host
-      - target: 143
-        published: 143
-        protocol: tcp
-        mode: host
-      - target: 993
-        published: 993
-        protocol: tcp
-        mode: host
-      - target: 465
-        published: 465
-        protocol: tcp
-        mode: host
-      - target: 587
-        published: 587
-        protocol: tcp
-        mode: host
-    environment:
-      - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
-      - DOMAIN=${DOMAIN}
-      - MAIL_DOMAIN=mail.${DOMAIN}
-    secrets:
-      - stalwart_admin_password
-    configs:
-      - source: stalwart_config
-        target: /opt/stalwart/etc/config.toml
-      - source: stalwart_entrypoint
-        target: /usr/local/bin/stalwart-entrypoint.sh
-        mode: 0755
-      - source: secrets_loader
-        target: /usr/local/bin/load-secrets.sh
-        mode: 0755
-    networks:
-      - traefik_net
-      - hubzilla_internal
-    volumes:
-      - stalwart_data:/opt/stalwart
-      - mail_certs:/certs:ro
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      - |
-        source /usr/local/bin/load-secrets.sh
-        exec /usr/local/bin/stalwart-entrypoint.sh
-    deploy:
-      replicas: 1
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.stalwart.rule=Host(`mail.${DOMAIN}`)"
-        - "traefik.http.routers.stalwart.entrypoints=websecure"
-        - "traefik.http.routers.stalwart.tls=true"
-        - "traefik.http.routers.stalwart.tls.certresolver=le"
-        - "traefik.http.services.stalwart.loadbalancer.server.port=8080"
-        - "traefik.swarm.network=traefik_net"
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: on-failure
-
 secrets:
   db_password:
     external: true
@@ -224,25 +133,13 @@ secrets:
   smtp_password:
     external: true
     name: hubzilla_smtp_password
-  stalwart_admin_password:
-    external: true
-    name: hubzilla_stalwart_admin_password
 
 configs:
   nginx_production_config:
     file: ./config/nginx-internal-production.conf
-  stalwart_config:
-    file: ./stalwart-config/config.toml
-  stalwart_entrypoint:
-    file: ./scripts/stalwart-entrypoint.sh
   secrets_loader:
     file: ./scripts/load-secrets.sh
 
 volumes:
   db_data:
   web_root:
-  stalwart_data:
-  mail_certs:
-  traefik_data:
-    external: true
-    name: traefik_traefik_data
