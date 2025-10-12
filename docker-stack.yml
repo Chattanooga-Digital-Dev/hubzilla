@@ -1,6 +1,8 @@
 version: '3.8'
 
 networks:
+  apps_net:
+    external: true
   traefik_net:
     external: true
   hubzilla_internal:
@@ -99,6 +101,7 @@ services:
         exec /usr/local/bin/entrypoint.sh supervisord -c /etc/supervisord.conf
     networks:
       - traefik_net
+      - apps_net
       - hubzilla_internal
     volumes:
       - web_root:/var/www/html
