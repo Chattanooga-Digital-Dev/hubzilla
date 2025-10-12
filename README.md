@@ -206,7 +206,19 @@ Secret: your_strong_random_password_here
 1. **Check services:** Portainer → Stacks → hubzilla → All services should show `1/1`
 2. **Check logs:** Click on `hubzilla_hub` service → Container → Logs
 3. **Look for:** `======== NETWORK: Added yourdomain.com -> 10.0.1.x to /etc/hosts ========`
-4. **Access site:** `https://hubzilla.yourdomain.com`
+4. **Access site:** `https://hubzilla.staging.chattanooga.digital`
+
+## Retrieving Registration Tokens
+When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`), you can retrieve tokens to approve accounts.
+
+### Via Portainer Console
+1. **Navigate:** Stacks → hubzilla → `hubzilla_hub_db` service
+2. Click running container
+3. **Console** tab → **Connect**
+4. Run query:
+   ```bash
+   psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
+   ```
 
 ### Updating Deployment
 
