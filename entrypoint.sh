@@ -15,6 +15,19 @@ fi
 # Skip database initialization if running supervisord (main hub container)
 if [ "$1" = "supervisord" ]; then
     echo "======== HUB CONTAINER: Running with supervisord (nginx + php-fpm) ========"
+    
+    # Add domain to /etc/hosts to prevent hairpin NAT timeout
+    # Point to Traefik's IP so HTTPS requests (port 443) work properly through the reverse proxy
+    # Try to resolve traefik service IP, fallback to common gateway if not found
+    TRAEFIK_IP=$(getent hosts traefik_traefik 2>/dev/null | awk '{print $1}' | head -1)
+    if [ -z "$TRAEFIK_IP" ]; then
+        # Fallback: try to find gateway IP on apps_net (usually .1 or .3)
+        TRAEFIK_IP="10.0.1.3"
+        echo "======== WARNING: Could not resolve traefik_traefik, using fallback IP: $TRAEFIK_IP ========"
+    fi
+    echo "$TRAEFIK_IP ${DOMAIN}" >> /etc/hosts
+    echo "======== NETWORK: Added ${DOMAIN} -> ${TRAEFIK_IP} to /etc/hosts ========"
+    
     # Continue with database checks below
 fi
 
