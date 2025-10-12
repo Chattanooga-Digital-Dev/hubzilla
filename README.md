@@ -1,6 +1,6 @@
 # Hubzilla Docker Deployment
 
-A fully containerized Hubzilla setup supporting both local development and production deployment to Docker Swarm.
+A fully containerized Hubzilla setup supporting both local development and staging deployment to Portainer/Docker Swarm.
 
 ## Features
 
@@ -9,20 +9,47 @@ A fully containerized Hubzilla setup supporting both local development and produ
 - **Multiple deployment modes** - Local development or Docker Swarm/Portainer deployment
 - **Integrated mail server** - Stalwart for SMTP/IMAP
 
-## Deployment Environments
-
-This repository supports multiple deployment scenarios:
-
-- **Local Development** - Full stack with HTTPS using `docker-compose.yml` for local experimentation
-- **Staging/Production** - Docker Swarm deployment via Portainer using `docker-stack.yml`
-
-**For local development:** Continue with the Quick Start below.
-
-**For staging/production deployment:** See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md)
-
+---
 ## Disclaimer
 
 This project was developed with AI assistance and is provided "as-is" without warranty. Please research any commands before running them. This code is in early development and may contain bugs.
+
+---
+## Deployment Environments
+
+This repository supports two deployment scenarios (Local Development and Staging Deployment to Portainer):
+
+### For Local Development
+Full stack with HTTPS using `docker-compose.yml` for local experimentation.
+
+**Quick Setup for Local Development:**
+1. Copy `.env.local.example` to `.env`
+2. Configure `MKCERT_PATH` for local SSL
+3. Run `docker compose up -d`
+
+See [Quick Start](#quick-start-local-development) below for detailed instructions.
+
+### For Staging (Portainer)
+Docker Swarm deployment via Portainer using `docker-stack.yml` with Let's Encrypt SSL.
+
+**Quick Setup for Staging:**
+1. Copy `.env.staging.example` to `.env` and customize for your domain
+2. Create three Docker Secrets in Portainer (db_password, smtp_password, stalwart_admin_password)
+3. Deploy stack in Portainer using Git repository method
+
+See [Staging Deployment](#staging-deployment-portainer) below for detailed instructions, or the complete [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md).
+
+## 🔒 Important: Environment File Selection
+**Choose the correct template:**
+
+| Environment | Use This File | Passwords |
+|-------------|--------------|-----------|
+| **Local Development** | `.env.local.example` | Included in file (localhost only) |
+| **Staging/Production** | `.env.staging.example` | Docker Secrets (NEVER in file) |
+
+⚠️ **Critical:** Do NOT use `.env.local.example` for staging or production deployments.
+---
+
 
 ## Quick Start (Local Development)
 
@@ -58,7 +85,9 @@ mkcert -install
 ```bash
 git clone https://github.com/Chattanooga-Digital-Dev/hubzilla.git
 cd hubzilla
-cp .env.example .env
+
+# Copy the local development template
+cp .env.local.example .env
 ```
 
 **Edit .env file:**
@@ -102,6 +131,109 @@ docker logs -f hubzilla_itself
 Your Hubzilla instance: **https://localhost**  
 Stalwart mail admin: **https://mail.localhost**
 
+---
+
+## Staging Deployment (Portainer)
+
+Deploy to Docker Swarm using Portainer's web interface with automatic SSL via Let's Encrypt.
+
+### Prerequisites
+- Portainer access on your Docker Swarm server
+- External Traefik network (`traefik_net`) already configured
+- Domain name pointing to your server
+
+### Step 1: Prepare Environment Configuration
+
+**On your local machine:**
+```bash
+# Clone repository
+git clone https://github.com/Chattanooga-Digital-Dev/hubzilla.git
+cd hubzilla
+
+# Copy staging template
+cp .env.staging.example .env
+```
+
+**⚠️ CRITICAL:** Use `.env.staging.example` as your template. 
+Do NOT copy `.env.local.example` for staging - it's for local development only and contains 
+passwords directly in the file, which is insecure for production.
+
+
+**Edit .env and customize:**
+```bash
+DOMAIN=hubzilla.yourdomain.com              # Your domain
+ADMIN_EMAIL=admin@yourdomain.com            # Admin email
+SMTP_DOMAIN=yourdomain.com                  # Email domain
+```
+
+**Important:** Do NOT add passwords to `.env` - those use Docker Secrets (next step).
+
+### Step 2: Create Docker Secrets
+
+**In Portainer:**
+1. Navigate to **Secrets** → **Add Secret**
+2. Create each secret with a strong password:
+
+| Secret Name | Description |
+|-------------|-------------|
+| `hubzilla_db_password` | Database password |
+| `hubzilla_smtp_password` | SMTP/email password |
+| `hubzilla_stalwart_admin_password` | Mail server admin password |
+
+**Example:**
+```
+Name: hubzilla_db_password
+Secret: your_strong_random_password_here
+```
+
+### Step 3: Deploy Stack in Portainer
+
+**Method 1: Git Repository (Recommended)**
+
+1. **Portainer** → **Stacks** → **Add Stack**
+2. **Name:** `hubzilla`
+3. **Build method:** Git Repository
+4. **Configuration:**
+   - Repository URL: `https://github.com/Chattanooga-Digital-Dev/hubzilla`
+   - Branch: `staging`
+   - Compose path: `docker-stack.yml`
+5. **Environment variables:**
+   - Load from `.env` file (automatic)
+   - Or manually paste your customized `.env` contents
+6. **Deploy Stack**
+
+**Method 2: Web Editor**
+
+1. **Portainer** → **Stacks** → **Add Stack**
+2. **Name:** `hubzilla`
+3. **Build method:** Web editor
+4. Copy/paste contents of `docker-stack.yml`
+5. Manually add all environment variables from your `.env`
+6. **Deploy Stack**
+
+### Step 4: Verify Deployment
+
+1. **Check services:** Portainer → Stacks → hubzilla → All services should show `1/1`
+2. **Check logs:** Click on `hubzilla_hub` service → Container → Logs
+3. **Look for:** `======== NETWORK: Added yourdomain.com -> 10.0.1.x to /etc/hosts ========`
+4. **Access site:** `https://hubzilla.yourdomain.com`
+
+### Updating Deployment
+
+When you push changes to GitHub:
+
+1. **Portainer** → **Stacks** → **hubzilla** → **Editor**
+2. Click **Pull and redeploy**
+3. ✅ Check **Prune services**
+4. ❌ **NEVER check** "Remove volumes" (will delete all data)
+5. Click **Update**
+
+### Complete Guide
+
+For detailed troubleshooting, network architecture, and advanced configuration, see the complete [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md).
+
+---
+
 ## Screenshots
 
 ### Channel Homepage
@@ -109,6 +241,8 @@ Stalwart mail admin: **https://mail.localhost**
 
 ### Channels Overview
 [<img src="docs/screenshots/channels.png" width="400" alt="Hubzilla Channels View"/>](docs/screenshots/channels.png)
+
+---
 
 ## Container Overview
 
@@ -120,7 +254,9 @@ Stalwart mail admin: **https://mail.localhost**
 | `hub_cron` | Background tasks | - |
 | `stalwart` | Local mail server | 25, 143, 587, 993, 465 |
 
-**Note:** This table describes the local development setup. Staging/production deployments use a different network architecture with external Traefik and Docker Swarm overlay networks. See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) for details.
+**Note:** This table describes the local development setup. Staging/production deployments use external Traefik on a dedicated overlay network. See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) for details.
+
+---
 
 ## Development Commands
 
@@ -140,6 +276,8 @@ docker compose restart
 docker compose down
 ```
 
+---
+
 ## Email Verification
 
 **Option 1:** Configure the included Stalwart mail server and Thunderbird email application 
@@ -152,6 +290,8 @@ docker exec hubzilla_itself sh -c 'PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOS
 
 # Visit: https://localhost/register/verify/YOUR_TOKEN_HERE
 ```
+
+---
 
 ## Troubleshooting
 
@@ -174,28 +314,19 @@ docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_
 docker compose up -d
 ```
 
+---
+
 ## Documentation
 
-- [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) - Deploy to Docker Swarm/Portainer
-- [SSL Setup Details](docs/SSL_SETUP.md) - Complete mkcert configuration
+- [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) - Complete Portainer deployment guide
+- [SSL Setup Details](docs/SSL_SETUP.md) - mkcert configuration for local development
 - [Email Configuration](docs/EMAIL_CONFIG.md) - Stalwart mail server setup
 - [Environment Variables](docs/ENVIRONMENT.md) - Complete .env reference
 - [Development Guide](docs/DEVELOPMENT.md) - Advanced commands and debugging
 - [Email-to-Calendar](docs/EMAIL_CALENDAR.md) - Calendar processing features
+- [Production Guide](docs/PRODUCTION.md) - Production deployment considerations
 
-## Deployment Options
-
-**Local Development:**
-This setup uses `docker-compose.yml` and is designed for local testing and development.
-
-**Staging/Production:**
-For deployment to Docker Swarm environments via Portainer, see the [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md). This includes:
-- Portainer-based deployment workflow
-- Docker Swarm stack configuration
-- Let's Encrypt SSL via Traefik
-- Two-network architecture (external Traefik + internal services)
-- Docker Secrets management
-- Troubleshooting and verification steps
+---
 
 ## Contributing
 
@@ -204,6 +335,8 @@ For deployment to Docker Swarm environments via Portainer, see the [Staging Depl
 3. Test changes: `docker compose down && docker compose build --no-cache && docker compose up -d`
 4. Commit: `git commit -m "Description"`
 5. Submit pull request
+
+---
 
 ## License
 

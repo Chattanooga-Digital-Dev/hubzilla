@@ -1,8 +1,10 @@
-# Environment and secrets
+# Active environment file (user creates from examples)
 .env
-*.env
-.env.staging
+
+# Old/backup environment files
 .env.copy
+.env.staging
+old.env
 
 # Docker-related files
 docker-compose.override.yml
@@ -87,8 +89,5 @@ temp/
 docs/_build/
 site/
 
-# Personal project-specific troubleshooting documents
-troubleshooting
-
-#Python virtual environment
+# Python virtual environment
 email-calendar/venv

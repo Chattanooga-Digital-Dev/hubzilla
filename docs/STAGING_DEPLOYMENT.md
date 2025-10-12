@@ -410,7 +410,6 @@ When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`),
 Before deploying to production:
 
 - [ ] SSL certificates auto-renewing (verify in Traefik logs)
-- [ ] Database backups configured
 - [ ] Docker secrets properly secured
 - [ ] Email delivery tested (SMTP via Stalwart)
 - [ ] Registration policy configured (`REGISTER_POLICY` in `.env`)
@@ -418,8 +417,6 @@ Before deploying to production:
 - [ ] Domain DNS pointing to server
 - [ ] Firewall rules allow ports: 80, 443, 25, 587, 465, 143, 993
 - [ ] Traefik access logs enabled for monitoring
-- [ ] Regular update schedule planned
-- [ ] Monitoring/alerting configured
 
 ---
 
@@ -443,14 +440,3 @@ Before deploying to production:
 - [Docker Secrets](https://docs.docker.com/engine/swarm/secrets/)
 
 ---
-
-## Summary
-
-The staging deployment succeeded by implementing:
-
-1. **Hairpin NAT Resolution** - Automatically routing domain requests through Traefik's internal IP prevents timeout loops
-2. **Two-Network Architecture** - Separating external routing (`traefik_net`) from internal communication (`hubzilla_internal`) provides clean separation of concerns
-3. **Portainer Deployment** - Web-based stack management without requiring SSH access
-4. **Docker Secrets** - Secure password management in Swarm environment
-
-The configuration is production-ready and can be replicated to additional environments by adjusting the `DOMAIN` variable and ensuring proper network topology.
