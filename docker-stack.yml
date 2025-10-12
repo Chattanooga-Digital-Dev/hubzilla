@@ -1,8 +1,6 @@
 version: '3.8'
 
 networks:
-  apps_net:
-    external: true
   traefik_net:
     external: true
   hubzilla_internal:
@@ -100,7 +98,6 @@ services:
         source /usr/local/bin/load-secrets.sh
         exec /usr/local/bin/entrypoint.sh supervisord -c /etc/supervisord.conf
     networks:
-      - apps_net
       - traefik_net
       - hubzilla_internal
     volumes:
@@ -120,7 +117,7 @@ services:
         - "traefik.http.routers.hubzilla.tls=true"
         - "traefik.http.routers.hubzilla.tls.certresolver=le"
         - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
-        - "traefik.docker.network=traefik_net"
+        - "traefik.swarm.network=traefik_net"
       restart_policy:
         condition: on-failure
 
@@ -194,7 +191,7 @@ services:
         target: /usr/local/bin/load-secrets.sh
         mode: 0755
     networks:
-      - apps_net
+      - traefik_net
       - hubzilla_internal
     volumes:
       - stalwart_data:/opt/stalwart
@@ -213,7 +210,7 @@ services:
         - "traefik.http.routers.stalwart.tls=true"
         - "traefik.http.routers.stalwart.tls.certresolver=le"
         - "traefik.http.services.stalwart.loadbalancer.server.port=8080"
-        - "traefik.docker.network=apps_net"
+        - "traefik.swarm.network=traefik_net"
       placement:
         constraints:
           - node.role == manager
