@@ -39,17 +39,7 @@ Docker Swarm deployment via Portainer using `docker-stack.yml` with Let's Encryp
 
 See [Staging Deployment](#staging-deployment-portainer) below for detailed instructions, or the complete [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md).
 
-## 🔒 Important: Environment File Selection
-**Choose the correct template:**
-
-| Environment | Use This File | Passwords |
-|-------------|--------------|-----------|
-| **Local Development** | `.env.local.example` | Included in file (localhost only) |
-| **Staging/Production** | `.env.staging.example` | Docker Secrets (NEVER in file) |
-
-⚠️ **Critical:** Do NOT use `.env.local.example` for staging or production deployments.
 ---
-
 
 ## Quick Start (Local Development)
 
