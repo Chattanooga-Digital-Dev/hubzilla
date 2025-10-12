@@ -88,6 +88,7 @@ temp/
 # Documentation build artifacts
 docs/_build/
 site/
+troubleshooting/
 
 # Python virtual environment
 email-calendar/venv
