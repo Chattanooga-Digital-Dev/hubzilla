@@ -1,7 +1,7 @@
 FROM alpine:3.20.2 AS build
 
 ARG HZ_REPO=https://framagit.org/hubzilla/core
-ARG HZ_VERSION=10.4.3
+ARG HZ_VERSION=10.4.4
 
 RUN apk add bash \
   curl \
