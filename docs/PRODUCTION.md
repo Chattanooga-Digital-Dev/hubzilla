@@ -1,17 +1,18 @@
-# Production Deployment
+# Production Deployment Guide
 
-This repository provides production-ready deployment via Docker Swarm and Portainer. For complete production deployment instructions, see the [Staging Deployment Guide](STAGING_DEPLOYMENT.md).
+This guide outlines considerations and best practices for deploying Hubzilla and the Stalwart mail server in a production Docker Swarm environment using Portainer.
 
 ## Production Deployment Overview
 
-The recommended production approach uses:
-- **Docker Swarm** for orchestration
-- **Portainer** for web-based management
-- **Traefik** with Let's Encrypt for automatic SSL
-- **Docker Secrets** for secure password management
-- **Two-network architecture** for security separation
+The recommended production approach leverages a multi-stack Docker Swarm deployment:
+- **Hubzilla Stack:** Deploys the main Hubzilla application.
+- **Stalwart Mail Stack:** Deploys the separate Stalwart mail server.
+- **Traefik:** Acts as a reverse proxy with automatic Let's Encrypt SSL.
+- **Portainer:** Provides web-based management for Docker Swarm.
+- **Docker Secrets:** Manages sensitive data securely.
+- **Two-Network Architecture:** Ensures security separation between external routing and internal communication.
 
-See [STAGING_DEPLOYMENT.md](STAGING_DEPLOYMENT.md) for complete instructions.
+For detailed deployment instructions, refer to the [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md) and the [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md).
 
 ---
 
@@ -31,7 +32,7 @@ See [STAGING_DEPLOYMENT.md](STAGING_DEPLOYMENT.md) for complete instructions.
 
 ### Deployment Method
 - **Local:** `docker compose up -d`
-- **Production:** Portainer stack deployment with `docker-stack.yml`
+- **Production:** Portainer stack deployment with `docker-stack.yml` and `docker-stack-stalwart.yml`
 
 ---
 
@@ -49,53 +50,35 @@ REGISTER_POLICY=REGISTER_APPROVE  # Recommended for production
 # Options: REGISTER_OPEN, REGISTER_APPROVE, REGISTER_CLOSED
 ```
 
-**Domain Configuration:**
-```bash
-DOMAIN=yourdomain.com
-ADMIN_EMAIL=admin@yourdomain.com
-SMTP_DOMAIN=yourdomain.com
-```
-
 **Passwords:**
 - Use strong, randomly generated passwords
 - Store in Docker Secrets (never commit to git)
 - Rotate regularly
 
-### Docker Secrets Setup
-
-Production deployments use Docker Secrets for sensitive data:
-
-```bash
-# Create secrets (in Portainer or via CLI)
-echo "strong_random_password" | docker secret create hubzilla_db_password -
-echo "strong_smtp_password" | docker secret create hubzilla_smtp_password -
-echo "strong_admin_password" | docker secret create hubzilla_stalwart_admin_password -
-```
-
-See [STAGING_DEPLOYMENT.md](STAGING_DEPLOYMENT.md#prerequisites) for details.
+See [HUBZILLA-STAGING_DEPLOYMENT.md](HUBZILLA-STAGING_DEPLOYMENT.md#prerequisites) for details.
 
 ---
 
 ## Infrastructure Requirements
 
 ### Database
-- PostgreSQL 16 with persistent volumes
-- Automated backup strategy
-- Regular maintenance (VACUUM, ANALYZE)
-- Monitoring for performance and disk space
+- PostgreSQL 16 with persistent volumes.
+- Automated backup strategy.
+- Regular maintenance (VACUUM, ANALYZE).
+- Monitoring for performance and disk space.
 
 ### Backups
-Configure regular backups for:
-- Database (`db_data` volume)
-- User uploads (`web_root` volume)
-- Mail data (`stalwart_data` volume)
+Configure regular backups for all persistent volumes:
+- **Hubzilla Database:** `db_data` volume
+- **Hubzilla Files/Uploads:** `web_root` volume
+- **Stalwart Mail Data:** `stalwart_data` volume
 
 **Backup strategy example:**
 ```bash
 # Database backup
 docker exec <postgres_container> pg_dump -U hubzilla -d hub > backup-$(date +%Y%m%d).sql
 
-# Volume backups
+# Volume backups (example for web_root, repeat for other volumes)
 docker run --rm -v hubzilla_web_root:/data -v $(pwd):/backup alpine tar czf /backup/web_root-$(date +%Y%m%d).tar.gz /data
 ```
 
@@ -219,7 +202,7 @@ Before going live:
 3. Use Portainer to pull and redeploy
 4. Verify services healthy after update
 
-See [STAGING_DEPLOYMENT.md](STAGING_DEPLOYMENT.md#stack-update-procedure) for details.
+See [HUBZILLA-STAGING_DEPLOYMENT.md](HUBZILLA-STAGING_DEPLOYMENT.md#stack-update-procedure) for details.
 
 ---
 
@@ -240,16 +223,6 @@ deploy:
 
 ---
 
-## Alternative Deployment Options
-
-### External Mail Service
-Consider using external mail providers for production:
-- **SendGrid** - Reliable SMTP relay
-- **Mailgun** - Developer-friendly API
-- **AWS SES** - Cost-effective for high volume
-
-Configure SMTP settings in `.env` to point to external service.
-
 ### Managed Database
 For high-availability production:
 - Use managed PostgreSQL (AWS RDS, Digital Ocean, etc.)
@@ -269,7 +242,8 @@ The Docker Swarm deployment works on:
 
 ## Support Resources
 
-- [Staging Deployment Guide](STAGING_DEPLOYMENT.md) - Complete production deployment instructions
+- [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md)
+- [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md)
 - [Docker Swarm Documentation](https://docs.docker.com/engine/swarm/)
 - [Traefik Documentation](https://doc.traefik.io/traefik/)
 - [Portainer Documentation](https://docs.portainer.io/)

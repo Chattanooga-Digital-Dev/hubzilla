@@ -1,6 +1,6 @@
-# Staging Deployment Guide
+# Hubzilla Stack Deployment Guide (Staging)
 
-Deploy Hubzilla to Docker Swarm using Portainer with Traefik reverse proxy.
+Deploy the Hubzilla application stack to Docker Swarm using Portainer with a Traefik reverse proxy.
 
 **Date:** October 12, 2025  
 **Deployment Target:** https://hubzilla.staging.chattanooga.digital  
@@ -10,7 +10,7 @@ Deploy Hubzilla to Docker Swarm using Portainer with Traefik reverse proxy.
 
 ## Overview
 
-This guide covers deploying Hubzilla to a Docker Swarm environment via Portainer. The deployment uses a two-network topology where Traefik operates on a dedicated overlay network for external routing, while Hubzilla services communicate internally via a separate overlay network.
+This guide covers deploying the main Hubzilla application stack. It assumes you have already deployed the separate [Stalwart Mail Stack](STALWART-SEPARATE-STACK-DEPLOYMENT.md).
 
 ### Key Components
 
@@ -42,46 +42,39 @@ This guide covers deploying Hubzilla to a Docker Swarm environment via Portainer
 │  │  (nginx)  │    │(postgres) │           │
 │  └─────┬─────┘    └───────────┘           │
 │        │                                   │
-│        │ SMTP                              │
-│        │                                   │
-│  ┌─────▼─────┐                            │
-│  │ Stalwart  │                            │
-│  │   Mail    │                            │
-│  └───────────┘                            │
-│                                            │
 │  Network: hubzilla_internal (internal)    │
-│  Network: traefik_net (hub & stalwart)    │
+│  Network: traefik_net (hub only)          │
 └────────────────────────────────────────────┘
 ```
 
 ### Network Details
 
 **traefik_net** (External, 10.0.1.0/24)
-- **Purpose:** External traffic routing
-- **Members:** Traefik, Hub, Stalwart
-- **Type:** External overlay network (must already exist)
+- **Purpose:** External traffic routing and cross-stack communication.
+- **Members:** Traefik, Hub, and the Stalwart service from the `mail` stack.
+- **Type:** External overlay network (must already exist).
 
 **hubzilla_internal** (Internal)
-- **Purpose:** Internal service communication
-- **Members:** Hub, Hub DB, Hub Cron, Stalwart, Cert Extractor
-- **Type:** Swarm overlay network (created by stack)
+- **Purpose:** Internal service communication for the Hubzilla stack.
+- **Members:** Hub, Hub DB, Hub Cron.
+- **Type:** Swarm overlay network (created by the `hubzilla` stack).
 
 ---
 
 ## Prerequisites
 
-### 1. Portainer Access
-- Access to Portainer instance on target server
-- Permissions to create/update stacks
+### 1. Stalwart Mail Stack
+The Stalwart mail stack must be deployed and running before you proceed. See the [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md) for instructions.
 
-### 2. External Networks
-The following external networks must already exist:
-- **traefik_net** - Traefik must be connected to this network
+### 2. Portainer Access
+- Access to a Portainer instance on the target server.
+- Permissions to create/update stacks.
 
-Verify in Portainer: **Networks** → Check for `traefik_net`
+### 3. External Networks
+The `traefik_net` external overlay network must already exist.
 
-### 3. Docker Secrets
-Three Docker secrets must be created before deployment:
+### 4. Docker Secrets
+The following three Docker secrets must be created before deployment:
 
 | Secret Name | Description |
 |-------------|-------------|
@@ -252,16 +245,14 @@ In Portainer:
 
 In Portainer:
 1. **Networks** → **traefik_net**
-2. Confirm `hubzilla_hub` and `hubzilla_stalwart` containers are listed
-3. Note their IP addresses
+2. Confirm the `hubzilla_hub` container is listed.
+3. Note its IP address.
 
 ### 3. Test External Access
 
-Open in browser:
-- Main site: `https://hubzilla.staging.chattanooga.digital`
-- Mail admin: `https://mail.hubzilla.staging.chattanooga.digital`
+Open your Hubzilla site in a browser: `https://hubzilla.staging.chattanooga.digital`
 
-Should load without 504 Gateway Timeout errors.
+It should load without 504 Gateway Timeout errors. The mail admin UI is part of the separate `mail` stack.
 
 ### 4. Test Internal Connectivity
 
@@ -357,20 +348,24 @@ docker exec $(docker ps -q -f name=hub_db) psql -U hubzilla -d hub -x -c "SELECT
 4. Update image version in `docker-stack.yml`
 5. Redeploy stack in Portainer
 
-### Stalwart Web UI Not Accessible
+### Hubzilla and Stalwart Connectivity Issues
 
 **Symptoms:**
-- Can't access `https://mail.hubzilla.staging.chattanooga.digital`
+- Hubzilla cannot send emails.
+- Logs show errors like `Connection refused` to `mail_stalwart`.
 
 **Solution:**
-1. Verify Stalwart on traefik_net: **Networks** → **traefik_net**
-2. Check Stalwart labels in `docker-stack.yml`:
-   ```yaml
-   - "traefik.enable=true"
-   - "traefik.swarm.network=traefik_net"
-   ```
-3. Verify port 8080 exposed in Stalwart service
-4. Check Stalwart service logs for startup errors
+1.  Ensure the `mail` stack is running and healthy.
+2.  Verify that both the `hubzilla_hub` and `mail_stalwart` services are connected to the `traefik_net` network.
+3.  From the `hubzilla_hub` container console, test DNS resolution and connectivity:
+    ```bash
+    # Should resolve to the mail_stalwart container's IP
+    nslookup mail_stalwart
+
+    # Should connect successfully
+    telnet mail_stalwart 587
+    ```
+4.  Check the `SMTP_HOST` variable in your `.env` file is set to `mail_stalwart`.
 
 ### Database Connection Errors
 

@@ -7,14 +7,14 @@
 
 ## Overview
 
-The Stalwart mail server has been separated into its own Docker Swarm stack (`docker-stack-stalwart.yml`) to enable independent deployment and management in staging/production environments.
+This guide details the deployment of the Stalwart mail server as a standalone Docker Swarm stack. Separating the mail server from the main Hubzilla application provides better isolation, scalability, and easier management.
 
-**Key Changes:**
-- Stalwart runs in a separate `mail` stack
-- Service name: `mail_stalwart` (stack + service naming)
-- Hubzilla connects via `SMTP_HOST=mail_stalwart`
-- Shares `traefik_net` network for connectivity
-- Uses same Docker secrets as before
+This stack must be deployed **before** the main [Hubzilla Stack](HUBZILLA-STAGING_DEPLOYMENT.md).
+
+### Key Features
+- **Independent Deployment:** Manage and update the mail server without affecting the Hubzilla application.
+- **Automated SSL:** A dedicated service extracts SSL certificates from Traefik and provides them to Stalwart.
+- **Cross-Stack Communication:** Securely communicates with the Hubzilla stack over a shared Docker network.
 
 ---
 
@@ -80,6 +80,24 @@ SMTP_HOST=mail_stalwart
 DOMAIN=hubzilla.staging.chatthub.online
 SMTP_DOMAIN=staging.chatthub.online
 ```
+
+---
+
+## SSL Certificate Handling
+
+The Stalwart mail server requires direct access to SSL certificates for secure communication. In this multi-stack deployment, certificates are managed by Traefik and then shared with the Stalwart stack using a dedicated `cert_extractor` service.
+
+### How it Works
+1.  **Traefik Certificate Generation:** Traefik, running in its own stack, obtains and manages Let's Encrypt SSL certificates for your domains (e.g., `hubzilla.yourdomain.com`, `mail.yourdomain.com`). These certificates are stored in a Docker volume (e.g., `traefik_certs`).
+2.  **`cert_extractor` Service:** The `cert_extractor` service (`ldez/traefik-certs-dumper`) is part of the `mail` stack. It is configured to mount the `traefik_certs` volume (read-only) and copy the relevant SSL certificate files (e.g., `mail.yourdomain.com.json`) to a shared volume accessible by the `mail_stalwart` service.
+3.  **`stalwart-entrypoint.sh` Script:** The `mail_stalwart` service uses a custom entrypoint script (`scripts/stalwart-entrypoint.sh`). This script is responsible for:
+    *   Waiting for the `cert_extractor` to finish copying the certificates.
+    *   Parsing the `.json` certificate file to extract the certificate and private key.
+    *   Moving these extracted `.pem` and `.key` files into the specific directory that Stalwart expects (`/opt/stalwart/etc/ssl/`).
+    *   Ensuring correct file permissions.
+    *   Finally, starting the Stalwart mail server.
+
+This automated process ensures that Stalwart always has the latest, valid SSL certificates without manual intervention.
 
 ---
 

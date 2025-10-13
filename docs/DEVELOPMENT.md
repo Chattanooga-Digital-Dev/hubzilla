@@ -12,7 +12,7 @@ docker compose down
 docker volume rm hubzilla_db_data
 docker compose up -d
 
-# Reset everything
+# Reset everything (for local development)
 docker compose down
 docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_nginx_config hubzilla_stalwart_data
 docker image rm hubzilla-hub hubzilla-hub_cron hubzilla-hub_web
@@ -67,3 +67,5 @@ curl -k -I https://localhost
 | hub_db (hubzilla_database) | 172.20.0.30 | PostgreSQL |
 | hub_cron (hubzilla_cronjob) | 172.20.0.40 | Background tasks |
 | stalwart (hubzilla_mailserver) | 172.20.0.50 | Stalwart mail |
+
+**Note:** This table describes the local development network. In staging/production, Stalwart runs in a separate stack.

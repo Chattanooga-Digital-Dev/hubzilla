@@ -4,10 +4,12 @@ A fully containerized Hubzilla setup supporting both local development and stagi
 
 ## Features
 
-- **HTTPS with valid certificates** - Local: mkcert, Staging/Production: Let's Encrypt via Traefik
+- **HTTPS with valid certificates** 
+  - Local: mkcert 
+  - Staging/Production: Let's Encrypt via Traefik
 - **PostgreSQL database** - Persistent data storage
 - **Multiple deployment modes** - Local development or Docker Swarm/Portainer deployment
-- **Integrated mail server** - Stalwart for SMTP/IMAP
+- **Integrated Mail Server** - Stalwart for local SMTP/IMAP testing
 
 ---
 ## Disclaimer
@@ -30,14 +32,15 @@ Full stack with HTTPS using `docker-compose.yml` for local experimentation.
 See [Quick Start](#quick-start-local-development) below for detailed instructions.
 
 ### For Staging (Portainer)
-Docker Swarm deployment via Portainer using `docker-stack.yml` with Let's Encrypt SSL.
+Multi-stack Docker Swarm deployment using Portainer with Let's Encrypt SSL.
 
 **Quick Setup for Staging:**
-1. Copy `.env.staging.example` to `.env` and customize for your domain
-2. Create three Docker Secrets in Portainer (db_password, smtp_password, stalwart_admin_password)
-3. Deploy stack in Portainer using Git repository method
+1. Copy `.env.staging.example` to `.env` and customize for your domain.
+2. Create three Docker Secrets in Portainer (`hubzilla_db_password`, `hubzilla_smtp_password`, `hubzilla_stalwart_admin_password`).
+3. Deploy the `mail` stack using `docker-stack-stalwart.yml`.
+4. Deploy the `hubzilla` stack using `docker-stack.yml`.
 
-See [Staging Deployment](#staging-deployment-portainer) below for detailed instructions, or the complete [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md).
+See the [Hubzilla Staging Deployment Guide](docs/HUBZILLA-STAGING_DEPLOYMENT.md) and [Stalwart Mail Stack Guide](docs/STALWART-SEPARATE-STACK-DEPLOYMENT.md) for detailed instructions.
 
 ---
 
@@ -99,7 +102,7 @@ docker logs -f hubzilla_itself
 # Exit with Ctrl+C when you see "Starting php-fpm"
 ```
 
-### 4. Complete Setup
+### 4. Complete the Setup
 1. **Open setup wizard:** https://localhost
 
 2. **Database configuration (Step 2):**
@@ -148,16 +151,6 @@ cp .env.staging.example .env
 Do NOT copy `.env.local.example` for staging - it's for local development only and contains 
 passwords directly in the file, which is insecure for production.
 
-
-**Edit .env and customize:**
-```bash
-DOMAIN=hubzilla.yourdomain.com              # Your domain
-ADMIN_EMAIL=admin@yourdomain.com            # Admin email
-SMTP_DOMAIN=yourdomain.com                  # Email domain
-```
-
-**Important:** Do NOT add passwords to `.env` - those use Docker Secrets (next step).
-
 ### Step 2: Create Docker Secrets
 
 **In Portainer:**
@@ -170,45 +163,50 @@ SMTP_DOMAIN=yourdomain.com                  # Email domain
 | `hubzilla_smtp_password` | SMTP/email password |
 | `hubzilla_stalwart_admin_password` | Mail server admin password |
 
-**Example:**
-```
-Name: hubzilla_db_password
-Secret: your_strong_random_password_here
-```
 
-### Step 3: Deploy Stack in Portainer
+### Step 3: Deploy Stacks in Portainer
 
-**Method 1: Git Repository (Recommended)**
+Deploy the stacks in the following order.
 
-1. **Portainer** → **Stacks** → **Add Stack**
-2. **Name:** `hubzilla`
-3. **Build method:** Git Repository
-4. **Configuration:**
-   - Repository URL: `https://github.com/Chattanooga-Digital-Dev/hubzilla`
-   - Branch: `staging`
-   - Compose path: `docker-stack.yml`
-5. **Environment variables:**
-   - Load from `.env` file (automatic)
-   - Or manually paste your customized `.env` contents
-6. **Deploy Stack**
+#### 1. Deploy the Mail Stack
 
-**Method 2: Web Editor**
+1.  **Portainer** → **Stacks** → **Add Stack**
+2.  **Name:** `mail`
+3.  **Build method:** Git Repository
+4.  **Configuration:**
+    *   Repository URL: `https://github.com/Chattanooga-Digital-Dev/hubzilla`
+    *   Repository reference: `refs/heads/staging`
+    *   Compose path: `docker-stack-stalwart.yml`
+5.  **Environment variables:**
+    *   Load from your customized `.env` file.
+6.  **Deploy Stack**
+7.  Wait for the `mail_stalwart` and `cert_extractor` services to show `1/1`.
 
-1. **Portainer** → **Stacks** → **Add Stack**
-2. **Name:** `hubzilla`
-3. **Build method:** Web editor
-4. Copy/paste contents of `docker-stack.yml`
-5. Manually add all environment variables from your `.env`
-6. **Deploy Stack**
+For more details, see the [Stalwart Mail Stack Deployment Guide](docs/STALWART-SEPARATE-STACK-DEPLOYMENT.md).
 
-### Step 4: Verify Deployment
+#### 2. Deploy the Hubzilla Stack
 
+1.  **Portainer** → **Stacks** → **Add Stack**
+2.  **Name:** `hubzilla`
+3.  **Build method:** Git Repository
+4.  **Configuration:**
+    *   Repository URL: `https://github.com/Chattanooga-Digital-Dev/hubzilla`
+    *   Repository reference: `refs/heads/staging`
+    *   Compose path: `docker-stack.yml`
+5.  **Environment variables:**
+    *   Load from your customized `.env` file.
+6.  **Deploy Stack**
+
+
+### Step 4: Verify Deployments
+
+### hubzilla: 
 1. **Check services:** Portainer → Stacks → hubzilla → All services should show `1/1`
 2. **Check logs:** Click on `hubzilla_hub` service → Container → Logs
 3. **Look for:** `======== NETWORK: Added yourdomain.com -> 10.0.1.x to /etc/hosts ========`
 4. **Access site:** `https://hubzilla.staging.chattanooga.digital`
 
-## Retrieving Registration Tokens
+### Retrieving Registration Tokens
 When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`), you can retrieve tokens to approve accounts.
 
 ### Via Portainer Console
@@ -219,6 +217,19 @@ When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`),
    ```bash
    psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
    ```
+
+### mail (stalwart server):
+1. **Check services:** Portainer → Stacks → mail → All services should show `1/1`
+2. **Check logs:** Click on `mail_stalwart` service → Container → Logs
+3. **Scroll up and look for:** `======== SUCCESS: Stalwart SSL certificates configured ========`
+`Certificate: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chatthub.online.pem`
+`Key: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chatthub.online-key.pem`
+4. **Access site:** `https://mail.hubzilla.staging.chatthub.online`
+
+   - To log into the Stalwart web UI, use:
+     - __Username:__ `admin`
+     - __Password:__ The value that you have stored in the `hubzilla_stalwart_admin_password` secret within your Portainer environment.
+
 
 ### Updating Deployment
 
@@ -232,7 +243,7 @@ When you push changes to GitHub:
 
 ### Complete Guide
 
-For detailed troubleshooting, network architecture, and advanced configuration, see the complete [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md).
+For detailed troubleshooting, network architecture, and advanced configuration, see the complete [Hubzilla Staging Deployment Guide](docs/HUBZILLA-STAGING_DEPLOYMENT.md).
 
 ---
 
@@ -256,7 +267,7 @@ For detailed troubleshooting, network architecture, and advanced configuration, 
 | `hub_cron` | Background tasks | - |
 | `stalwart` | Local mail server | 25, 143, 587, 993, 465 |
 
-**Note:** This table describes the local development setup. Staging/production deployments use external Traefik on a dedicated overlay network. See [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) for details.
+**Note:** This table describes the **local development setup**. Staging deployments run the mail server in a separate stack. See the [Hubzila Staging Deployment Guide](docs/HUBZILLA-STAGING_DEPLOYMENT.md) for details.
 
 ---
 
@@ -280,12 +291,12 @@ docker compose down
 
 ---
 
-## Email Verification
+## Email Verification for local development
 
 **Option 1:** Configure the included Stalwart mail server and Thunderbird email application 
 - (see [docs/EMAIL_CONFIG.md](docs/EMAIL_CONFIG.md)) for instructions
 
-**Option 2:** Manual verification
+**Option 2:** Manual verification for local development
 ```bash
 # Get verification token
 docker exec hubzilla_itself sh -c 'PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT reg_hash FROM register WHERE reg_email='\''your-email@example.com'\'';"'
@@ -293,40 +304,37 @@ docker exec hubzilla_itself sh -c 'PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOS
 # Visit: https://localhost/register/verify/YOUR_TOKEN_HERE
 ```
 
----
+## Getting the Hubzilla Registration Token from the postgresql database in the Portainer staging environent
 
-## Troubleshooting
+### Via Portainer Console
 
-**Containers won't start:**
+1. **Navigate:** Stacks → hubzilla → `hubzilla_hub_db` service
+2. Click running container
+3. **Console** tab → **Connect**
+4. Run query:
+   ```bash
+   psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
+   ```
+### Via SSH on the server
 ```bash
-docker compose ps
-docker compose logs
-```
-
-**Database connection errors:**
-```bash
-# Wait 30-60s for database initialization on first start
-docker logs hubzilla_database
-```
-
-**Reset everything:**
-```bash
-docker compose down
-docker volume rm hubzilla_db_data hubzilla_web_root hubzilla_ssl_certs hubzilla_stalwart_data hubzilla_traefik_certs
-docker compose up -d
+docker exec $(docker ps -q -f name=hub_db) psql -U hubzilla -d hub -x -c "SELECT reg_email, reg_hash FROM register;"
 ```
 
 ---
 
 ## Documentation
 
-- [Staging Deployment Guide](docs/STAGING_DEPLOYMENT.md) - Complete Portainer deployment guide
-- [SSL Setup Details](docs/SSL_SETUP.md) - mkcert configuration for local development
-- [Email Configuration](docs/EMAIL_CONFIG.md) - Stalwart mail server setup
-- [Environment Variables](docs/ENVIRONMENT.md) - Complete .env reference
-- [Development Guide](docs/DEVELOPMENT.md) - Advanced commands and debugging
-- [Email-to-Calendar](docs/EMAIL_CALENDAR.md) - Calendar processing features
-- [Production Guide](docs/PRODUCTION.md) - Production deployment considerations
+- **Deployment**
+  - [Hubzilla Staging Deployment Guide](docs/HUBZILLA-STAGING_DEPLOYMENT.md) - Deploying the main Hubzilla stack.
+  - [Stalwart Mail Stack Guide](docs/STALWART-SEPARATE-STACK-DEPLOYMENT.md) - Deploying the separate mail server.
+  - [Production Guide](docs/PRODUCTION.md) - Production readiness and best practices.
+- **Configuration**
+  - [Environment Variables](docs/ENVIRONMENT.md) - Complete `.env` reference.
+  - [SSL Setup (Local)](docs/SSL_SETUP.md) - `mkcert` for local HTTPS.
+  - [Email Configuration (Local)](docs/EMAIL_CONFIG.md) - Local Stalwart and Thunderbird setup.
+- **Development**
+  - [Development Guide](docs/DEVELOPMENT.md) - Common commands and debugging.
+  - [Email-to-Calendar](docs/EMAIL_CALENDAR.md) - Details on the calendar processing service.
 
 ---
 

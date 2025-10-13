@@ -166,7 +166,7 @@ Passwords and secrets are managed via **Docker Secrets**, not environment variab
 3. Paste password value
 4. Click **Create Secret**
 
-See [Staging Deployment Guide](STAGING_DEPLOYMENT.md#prerequisites) for details.
+See [Hubzilla Staging Deployment Guide](HUBZILLA-STAGING_DEPLOYMENT.md#prerequisites) for details.
 
 ### Key Differences from Local
 
@@ -224,7 +224,7 @@ services:
 - Keep `.env.example` updated with non-sensitive defaults
 
 ### Staging/Production
-- Generate strong random passwords (20+ characters)
+- Generate strong random passwords (15+ characters)
 - Store passwords only in Docker Secrets
 - Never commit passwords to git
 - Rotate secrets regularly
@@ -233,67 +233,8 @@ services:
 
 ---
 
-## Complete Example
-
-### Local Development `.env`
-```bash
-MKCERT_PATH=~/.local/share/mkcert
-DOMAIN=localhost
-ADMIN_EMAIL=admin@example.com
-TIMEZONE=America/New_York
-REQUIRE_EMAIL=0
-REGISTER_POLICY=REGISTER_OPEN
-DB_HOST=hub_db
-DB_NAME=hub
-DB_USER=hubzilla
-DB_PASSWORD=P@55w0rD
-DB_TYPE=postgres
-DB_PORT=5432
-STALWART_ADMIN_PASSWORD=admin123
-SMTP_HOST=stalwart
-SMTP_PORT=587
-SMTP_DOMAIN=localhost
-SMTP_USER=admin@example.com
-SMTP_PASS=admin123
-SMTP_USE_STARTTLS=YES
-MAIL_DOMAIN=mail.localhost
-DEBUG_PHP=0
-LOG_LEVEL=DEBUG
-ENABLE_LOGROT=0
-```
-
-### Staging/Production `.env`
-```bash
-# No MKCERT_PATH (uses Let's Encrypt)
-DOMAIN=hubzilla.yourdomain.com
-ADMIN_EMAIL=admin@yourdomain.com
-TIMEZONE=America/New_York
-REQUIRE_EMAIL=1
-REGISTER_POLICY=REGISTER_APPROVE
-DB_HOST=hub_db
-DB_NAME=hub
-DB_USER=hubzilla
-# DB_PASSWORD via Docker Secret
-DB_TYPE=postgres
-DB_PORT=5432
-# STALWART_ADMIN_PASSWORD via Docker Secret
-SMTP_HOST=stalwart
-SMTP_PORT=587
-SMTP_DOMAIN=yourdomain.com
-SMTP_USER=admin@yourdomain.com
-# SMTP_PASS via Docker Secret
-SMTP_USE_STARTTLS=YES
-MAIL_DOMAIN=mail.yourdomain.com
-DEBUG_PHP=0
-LOG_LEVEL=INFO
-ENABLE_LOGROT=1
-LOGROT_SIZE=10485760
-LOGROT_MAXFILES=10
-```
-
----
-
 ## Reference
 
-- [Staging Deployment Guide](STAGING_DEPLOYMENT.md) - Production deployment with Docker Secrets
+- [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md)
+- [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md)
 - [Docker Secrets Documentation](https://docs.docker.com/engine/swarm/secrets/)

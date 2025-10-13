@@ -2,7 +2,7 @@
 
 **This guide is for local development SSL setup only.**
 
-For staging/production SSL with Let's Encrypt, see [Staging Deployment Guide](STAGING_DEPLOYMENT.md).
+For staging/production SSL with Let's Encrypt, see the [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md) and the [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md).
 
 ---
 
@@ -253,7 +253,7 @@ For staging and production environments:
 - Publicly trusted certificates
 - No manual CA installation needed
 
-See [Staging Deployment Guide](STAGING_DEPLOYMENT.md) for production SSL configuration with Traefik and Let's Encrypt.
+See the [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md) and the [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md) for production SSL configuration with Traefik and Let's Encrypt.
 
 ---
 
@@ -280,3 +280,5 @@ The `rootCA-key.pem` file can sign certificates for any domain. Keep it secure:
 - [mkcert GitHub Repository](https://github.com/FiloSottile/mkcert)
 - [Traefik HTTPS Documentation](https://doc.traefik.io/traefik/https/overview/)
 - [Let's Encrypt for Production](https://doc.traefik.io/traefik/https/acme/)
+- [Hubzilla Stack Deployment Guide (Staging)](HUBZILLA-STAGING_DEPLOYMENT.md)
+- [Stalwart Mail Stack Deployment Guide](STALWART-SEPARATE-STACK-DEPLOYMENT.md)
