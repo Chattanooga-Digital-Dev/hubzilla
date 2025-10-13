@@ -25,10 +25,12 @@ services:
           echo "Waiting for /data/acme.json to be created..."
           sleep 1
         done
-        echo "acme.json found. Running certs dumper..."
-        traefik-certs-dumper file --version v2 --watch --source /data/acme.json --dest /certs
-        echo "--- Initial certificate dump complete. Monitoring for changes. ---"
+        echo "acme.json found. Performing initial certificate dump..."
+        traefik-certs-dumper file --version v2 --source /data/acme.json --dest /certs
+        echo "--- Initial dump complete. Certificate files are: ---"
         ls -l /certs
+        echo "--- Now starting watcher for certificate changes... ---"
+        exec traefik-certs-dumper file --version v2 --watch --source /data/acme.json --dest /certs
     environment:
       - DOMAIN=${DOMAIN}
       - MAIL_DOMAIN=mail.${DOMAIN}
