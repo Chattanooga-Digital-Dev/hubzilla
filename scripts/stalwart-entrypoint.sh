@@ -32,8 +32,8 @@ elif [ -d "/certs" ]; then
 	max_wait=60
 	count=0
 	
-	CERT_FILE="/certs/${CERT_DOMAIN}.crt"
-	KEY_FILE="/certs/${CERT_DOMAIN}.key"
+	CERT_FILE="/certs/certs/${CERT_DOMAIN}.crt"
+	KEY_FILE="/certs/private/${CERT_DOMAIN}.key"
 	
 	while [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; do
 		if [ $count -ge $max_wait ]; then
