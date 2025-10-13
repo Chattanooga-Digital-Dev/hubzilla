@@ -16,16 +16,19 @@ services:
   # Certificate extractor - pulls certs from Traefik for Stalwart
   cert_extractor:
     image: ldez/traefik-certs-dumper:v2.8.3
-    entrypoint: sh -c '
-      apk add jq;
-      while ! [ -e /data/acme.json ] ||
-            ! [ -s /data/acme.json ]; do
-        sleep 1;
-      done;
-      traefik-certs-dumper file --version v2 --watch
-        --source /data/acme.json --dest /certs;
-      echo "--- Certificate files extracted ---";
-      ls -l /certs;'
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        apk add jq
+        while ! [ -e /data/acme.json ] || ! [ -s /data/acme.json ]; do
+          echo "Waiting for /data/acme.json to be created..."
+          sleep 1
+        done
+        echo "acme.json found. Running certs dumper..."
+        traefik-certs-dumper file --version v2 --watch --source /data/acme.json --dest /certs
+        echo "--- Initial certificate dump complete. Monitoring for changes. ---"
+        ls -l /certs
     environment:
       - DOMAIN=${DOMAIN}
       - MAIL_DOMAIN=mail.${DOMAIN}
