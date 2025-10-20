@@ -93,8 +93,8 @@ services:
         - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
         - "traefik.swarm.network=traefik_net"
         # Staging Auth Middleware
-        - "traefik.http.middlewares.staging-auth.basicauth.users=dev-team:$$apr1$$8ILEy6GR$$EnCSTIPn3LWvb1Z79/Wog/"
-        - "traefik.http.routers.hubzilla.middlewares=staging-auth"
+        # - "traefik.http.middlewares.staging-auth.basicauth.users=dev-team:$$apr1$$8ILEy6GR$$EnCSTIPn3LWvb1Z79/Wog/"
+        # - "traefik.http.routers.hubzilla.middlewares=staging-auth"
       restart_policy:
         condition: on-failure
 
