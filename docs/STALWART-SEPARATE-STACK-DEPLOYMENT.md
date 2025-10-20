@@ -1,6 +1,5 @@
 # Stalwart Mail Stack Deployment Guide
 
-**Date:** October 12, 2025  
 **Purpose:** Deploy Stalwart mail server as a separate stack in staging environments
 
 ---
@@ -9,7 +8,7 @@
 
 This guide details the deployment of the Stalwart mail server as a standalone Docker Swarm stack. Separating the mail server from the main Hubzilla application provides better isolation, scalability, and easier management.
 
-This stack must be deployed **before** the main [Hubzilla Stack](HUBZILLA-STAGING_DEPLOYMENT.md).
+This stack should be deployed **before** the main [Hubzilla Stack](HUBZILLA-STAGING_DEPLOYMENT.md).
 
 ### Key Features
 - **Independent Deployment:** Manage and update the mail server without affecting the Hubzilla application.
@@ -199,18 +198,6 @@ Services on the same overlay network (`traefik_net`) can communicate using their
 2. Check `traefik_data` volume exists and is accessible
 3. Verify cert_extractor is running: **Stacks → mail → cert_extractor**
 
-### Issue: Stalwart Fails with "DB_PASSWORD secret not found"
-
-**Symptoms:**
-- Stalwart container exits immediately
-- Logs show: `ERROR: DB_PASSWORD secret not found`
-
-**Solution:**
-This was the original issue that's now fixed. If you still see this:
-1. Ensure you're using the updated `load-secrets.sh` script
-2. Verify you're deploying from the latest `staging` branch
-3. The fix makes DB_PASSWORD optional for services without DB_USER
-
 ### Issue: Cannot Access Stalwart Web UI
 
 **Symptoms:**
@@ -220,43 +207,6 @@ This was the original issue that's now fixed. If you still see this:
 1. Verify Stalwart is on `traefik_net`: **Networks → traefik_net**
 2. Check Traefik labels on mail_stalwart service
 3. Verify DNS points `mail.staging.chatthub.online` to server IP
-
----
-
-## Rollback Procedure
-
-If you need to rollback to the integrated deployment:
-
-1. **Stop mail stack:**
-   - Portainer: **Stacks → mail → Stop Stack**
-
-2. **Revert hubzilla stack to old version:**
-   - Use git to checkout previous commit
-   - Redeploy with old `docker-stack.yml`
-
-3. **Update .env:**
-   ```bash
-   SMTP_HOST=stalwart  # (old integrated name)
-   ```
-
----
-
-## File Changes Summary
-
-### Modified Files
-1. **scripts/load-secrets.sh** - Made DB_PASSWORD check conditional
-2. **docker-stack.yml** - Removed Stalwart and cert_extractor services
-3. **.env** - Changed `SMTP_HOST=mail_stalwart`
-4. **.env.staging.example** - Changed `SMTP_HOST=mail_stalwart`
-
-### New Files
-1. **docker-stack-stalwart.yml** - Separate mail server stack
-
-### Unchanged Files
-- **docker-compose.yml** - Local development still has integrated Stalwart
-- **stalwart-config/config.toml** - No changes needed
-- **scripts/stalwart-entrypoint.sh** - No changes needed
-
 ---
 
 ## Benefits of Separate Stack
@@ -269,28 +219,6 @@ If you need to rollback to the integrated deployment:
 
 ---
 
-## Next Steps
-
-After successful deployment:
-
-1. **Test Email Sending:**
-   - Register new user on Hubzilla
-   - Verify registration email is sent
-
-2. **Test Email Receiving:**
-   - Send email to `admin@staging.chatthub.online`
-   - Verify it appears in Stalwart
-
-3. **Monitor Logs:**
-   - Watch for connection issues between hub and mail_stalwart
-   - Check SSL certificate renewal
-
-4. **Document Production Deployment:**
-   - Same process for `portainer.staging.chattanooga.digital`
-   - Update environment variables for that domain
-
----
-
 ## Related Documentation
 
 - [Staging Deployment Guide](./STAGING-DEPLOYMENT-chattanooga-digital.md)
@@ -298,11 +226,3 @@ After successful deployment:
 - Main [README.md](../README.md)
 
 ---
-
-## Support
-
-If issues persist:
-1. Check service logs in Portainer
-2. Verify network connectivity with `nslookup` and `telnet`
-3. Review Traefik dashboard at port 8080
-4. Ensure all Docker secrets are properly created

@@ -2,7 +2,6 @@
 
 Deploy the Hubzilla application stack to Docker Swarm using Portainer with a Traefik reverse proxy.
 
-**Date:** October 12, 2025  
 **Deployment Target:** https://hubzilla.staging.chattanooga.digital  
 **Server Access:** Portainer only (no SSH access)
 
@@ -116,22 +115,6 @@ Required environment variable in stack deployment:
 
 3. **Click Deploy Stack**
 
-### Method 2: Manual Stack Upload
-
-1. **In Portainer → Stacks → Add Stack:**
-   - **Name:** `hubzilla`
-   - **Build method:** Web editor
-   - Paste contents of `docker-stack.yml`
-
-2. **Environment Variables:**
-   Set all required variables from `.env` file manually, including:
-   - `DOMAIN`
-   - Database configuration
-   - SMTP configuration
-   - All other environment variables
-
-3. **Click Deploy Stack**
-
 ---
 
 ## Stack Update Procedure
@@ -140,12 +123,9 @@ When updating an existing deployment:
 
 1. **Navigate to:** Stacks → hubzilla → Editor
 
-2. **For Git-based stacks:**
-   - Click **Pull and redeploy**
+2. Click **Pull and redeploy**
 
-3. **For manual stacks:**
-   - Update stack definition in editor
-   - Click **Update the stack**
+3. Click **Update the stack**
 
 4. **CRITICAL OPTIONS:**
    - ✅ **Prune services** (recommended - removes old service definitions)
@@ -165,115 +145,6 @@ When updating an existing deployment:
 - Network connections
 - Service configuration
 - Container images (if version changed)
-
----
-
-## Network Configuration Deep Dive
-
-### The Hairpin NAT Problem
-
-During initial deployment, Hubzilla's setup wizard was unreachable with 504 Gateway Timeout errors. The root cause:
-
-1. Hubzilla performs self-checks by making HTTP/HTTPS requests to its own domain
-2. DNS resolved the domain to the external public IP address
-3. Container attempted connection via public internet (hairpin NAT)
-4. Requests timed out after 60 seconds
-
-### The Solution
-
-Modified `entrypoint.sh` to automatically add the domain to `/etc/hosts` inside the container, pointing to Traefik's internal IP:
-
-```bash
-# Point to Traefik's IP so HTTPS requests (port 443) work through reverse proxy
-TRAEFIK_IP=$(getent hosts traefik_traefik 2>/dev/null | awk '{print $1}' | head -1)
-if [ -z "$TRAEFIK_IP" ]; then
-    # Fallback: try to find gateway IP on traefik_net (usually .1 or .3)
-    TRAEFIK_IP="10.0.1.3"
-    echo "WARNING: Could not resolve traefik_traefik, using fallback IP: $TRAEFIK_IP"
-fi
-echo "$TRAEFIK_IP ${DOMAIN}" >> /etc/hosts
-```
-
-**Why this works:**
-- Pointing to `127.0.0.1` wouldn't work (nginx only listens on port 80, not 443)
-- HTTPS requests must go through Traefik for SSL termination
-- Service discovery (`getent hosts`) automatically finds correct Traefik IP
-- Requests loop through reverse proxy properly with valid SSL
-
-### Connecting Services to Traefik
-
-Services must explicitly join `traefik_net` to communicate with Traefik:
-
-```yaml
-services:
-  hub:
-    networks:
-      - traefik_net          # For Traefik communication
-      - hubzilla_internal    # For DB, cron, mail communication
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.hubzilla.rule=Host(`${DOMAIN}`)"
-        - "traefik.http.routers.hubzilla.entrypoints=websecure"
-        - "traefik.http.routers.hubzilla.tls=true"
-        - "traefik.http.routers.hubzilla.tls.certresolver=le"
-        - "traefik.http.services.hubzilla.loadbalancer.server.port=80"
-        - "traefik.swarm.network=traefik_net"    # Critical: specifies routing network
-```
-
-**Important:** Use `traefik.swarm.network` label (not the deprecated `traefik.docker.network`).
-
----
-
-## Verification Steps
-
-### 1. Check Service Logs
-
-In Portainer:
-1. **Stacks** → **hubzilla** → Select service (e.g., `hubzilla_hub`)
-2. Click running container
-3. **Logs** tab
-
-**Look for:**
-```
-======== NETWORK: Added hubzilla.staging.chattanooga.digital -> 10.0.1.x to /etc/hosts ========
-```
-
-**Verify IP is NOT the fallback** - should match Traefik's actual IP on traefik_net.
-
-### 2. Verify Network Connectivity
-
-In Portainer:
-1. **Networks** → **traefik_net**
-2. Confirm the `hubzilla_hub` container is listed.
-3. Note its IP address.
-
-### 3. Test External Access
-
-Open your Hubzilla site in a browser: `https://hubzilla.staging.chattanooga.digital`
-
-It should load without 504 Gateway Timeout errors. The mail admin UI is part of the separate `mail` stack.
-
-### 4. Test Internal Connectivity
-
-From container console in Portainer (`hubzilla_hub` container):
-
-```bash
-# Check network interfaces
-ip addr show
-
-# Verify Traefik service discovery
-getent hosts traefik_traefik
-# Should return: 10.0.1.x traefik_traefik
-
-# Check /etc/hosts entry
-cat /etc/hosts | grep hubzilla
-# Should show: 10.0.1.x hubzilla.staging.chattanooga.digital
-
-# Test HTTPS connection through Traefik
-wget -O- --timeout=5 https://hubzilla.staging.chattanooga.digital/ | head -20
-# Should return HTML content (not timeout)
-```
 
 ---
 
@@ -401,22 +272,6 @@ docker exec $(docker ps -q -f name=hub_db) psql -U hubzilla -d hub -x -c "SELECT
 4. Redeploy stack
 
 ---
-
-## Production Readiness Checklist
-
-Before deploying to production:
-
-- [ ] SSL certificates auto-renewing (verify in Traefik logs)
-- [ ] Docker secrets properly secured
-- [ ] Email delivery tested (SMTP via Stalwart)
-- [ ] Registration policy configured (`REGISTER_POLICY` in `.env`)
-- [ ] Admin account created and secured
-- [ ] Domain DNS pointing to server
-- [ ] Firewall rules allow ports: 80, 443, 25, 587, 465, 143, 993
-- [ ] Traefik access logs enabled for monitoring
-
----
-
 ## Key Files
 
 - **docker-stack.yml** - Docker Swarm stack definition
