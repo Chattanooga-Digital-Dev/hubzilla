@@ -241,6 +241,39 @@ When you push changes to GitHub:
 4. ❌ **NEVER check** "Remove volumes" (will delete all data)
 5. Click **Update**
 
+### Optional: Enable Basic Authentication (Extra Staging Security)
+
+**Why it's disabled by default:** Basic authentication interferes with the initial Hubzilla setup wizard, causing URL rewrite errors. If you want to enable it, it should be done AFTER completing the setup.
+
+**What it does:** Adds a password prompt before anyone can access your staging site, providing an extra security layer for testing environments.
+
+**To enable after deployment:**
+
+1. **Generate password hash:**
+   ```bash
+   # Using htpasswd (install with: sudo apt install apache2-utils)
+   htpasswd -nb username password
+   # Output: username:$apr1$xyz...
+   ```
+
+2. **Edit `docker-stack.yml`:**
+   ```yaml
+   # Uncomment these lines in the hub service deploy.labels section:
+   - "traefik.http.middlewares.staging-auth.basicauth.users=username:$apr1$xyz..."
+   - "traefik.http.routers.hubzilla.middlewares=staging-auth"
+   ```
+   
+   **Important:** Use `$` (double dollar signs) in the hash to escape for Docker Compose.
+
+3. **Redeploy stack in Portainer:**
+   - Stacks → hubzilla → Editor
+   - Pull and redeploy
+   - Check "Prune services"
+
+4. **Access site:** Browser will prompt for username/password before showing Hubzilla.
+
+---
+
 ### Complete Guide
 
 For detailed troubleshooting, network architecture, and advanced configuration, see the complete [Hubzilla Staging Deployment Guide](docs/HUBZILLA-STAGING_DEPLOYMENT.md).
