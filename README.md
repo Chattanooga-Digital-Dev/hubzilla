@@ -258,7 +258,7 @@ When you push changes to GitHub:
 
 2. **Edit `docker-stack.yml`:**
    ```yaml
-   # Uncomment these lines in the hub service deploy.labels section:
+   # Uncomment these lines in the hub service deploy.labels section and add your username and generated password hash:
    - "traefik.http.middlewares.staging-auth.basicauth.users=username:$apr1$xyz..."
    - "traefik.http.routers.hubzilla.middlewares=staging-auth"
    ```
