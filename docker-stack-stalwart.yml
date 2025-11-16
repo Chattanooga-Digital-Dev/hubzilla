@@ -49,6 +49,7 @@ services:
 
   stalwart:
     image: stalwartlabs/stalwart:latest
+    hostname: mail.internal
     ports:
       - target: 25
         published: 25
