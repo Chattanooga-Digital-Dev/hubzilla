@@ -72,7 +72,6 @@ services:
         mode: host
     environment:
       - STALWART_HOSTNAME=mail.${SMTP_DOMAIN}
-      - SERVER_HOSTNAME=mail.${SMTP_DOMAIN}
       - DOMAIN=${DOMAIN}
       - MAIL_DOMAIN=mail.${DOMAIN}
     secrets:
