@@ -77,3 +77,4 @@ enable = true
 cert = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%.pem}%"
 private-key = "%{file:/opt/stalwart/etc/ssl/%{env:MAIL_DOMAIN}%-key.pem}%"
 default = true
+server.hostname = "mail.%{env:MAIL_DOMAIN}%"
