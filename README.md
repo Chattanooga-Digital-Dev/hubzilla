@@ -147,7 +147,7 @@ cd hubzilla
 cp .env.staging.example .env
 ```
 
-**⚠️ CRITICAL:** Use `.env.staging.example` as your template. 
+**CRITICAL:** Use `.env.staging.example` as your template. 
 Do NOT copy `.env.local.example` for staging - it's for local development only and contains 
 passwords directly in the file, which is insecure for production.
 
@@ -222,9 +222,9 @@ When users register with approval required (`REGISTER_POLICY=REGISTER_APPROVE`),
 1. **Check services:** Portainer → Stacks → mail → All services should show `1/1`
 2. **Check logs:** Click on `mail_stalwart` service → Container → Logs
 3. **Scroll up and look for:** `======== SUCCESS: Stalwart SSL certificates configured ========`
-`Certificate: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chatthub.online.pem`
-`Key: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chatthub.online-key.pem`
-4. **Access site:** `https://mail.hubzilla.staging.chatthub.online`
+`Certificate: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chattnooga.digital.pem`
+`Key: /opt/stalwart/etc/ssl/mail.hubzilla.staging.chattanooa.digital-key.pem`
+4. **Access site:** `https://mail.hubzilla.staging.chattanooga.digital`
 
    - To log into the Stalwart web UI, use:
      - __Username:__ `admin`
@@ -237,8 +237,8 @@ When you push changes to GitHub:
 
 1. **Portainer** → **Stacks** → **hubzilla** → **Editor**
 2. Click **Pull and redeploy**
-3. ✅ Check **Prune services**
-4. ❌ **NEVER check** "Remove volumes" (will delete all data)
+3. Check **Prune services**
+4. **NEVER check** "Remove volumes" (will delete all data)
 5. Click **Update**
 
 ### Optional: Enable Basic Authentication (Extra Staging Security)
