@@ -78,5 +78,12 @@ fi
 
 echo "======== STARTING: Stalwart Mail Server ========"
 
+	# use envsubst to update hostname setting in config.toml with MAIL_DOMAIN if set
+	if [ -n "$MAIL_DOMAIN" ]; then
+	# install envsubst if not already present
+		which envsubst >/dev/null 2>&1 || apt-get update && apt-get install -y gettext-base
+		envsubst < /opt/stalwart/etc/config.toml > /opt/stalwart/etc/config.toml.tmp && mv /opt/stalwart/etc/config.toml.tmp /opt/stalwart/etc/config.toml
+	fi
+
 # Start Stalwart with the configuration
 exec /usr/local/bin/stalwart --config=/opt/stalwart/etc/config.toml
